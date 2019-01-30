@@ -58,130 +58,193 @@
 		- Tomcat 7 文档：<https://tomcat.apache.org/tomcat-7.0-doc/config/>
 		- Tomcat 8 文档：<https://tomcat.apache.org/tomcat-8.0-doc/config/>
 - 如果你需要查看 Tomcat 的运行状态可以配置tomcat管理员账户，然后登陆 Tomcat 后台进行查看
-- 编辑 /opt/tomcat7/bin/conf/tomcat-users.xml 文件，在里面添加下面信息：
+- 编辑 /opt/tomcat8/bin/conf/tomcat-users.xml 文件，在里面添加下面信息：
+
 ``` xml
-<role rolename="manager"/>
+<role rolename="tomcat"/>
 <role rolename="manager-gui"/>
-<role rolename="admin"/>
-<role rolename="admin-gui"/>
-<user username="tomcat" password="tomcat" roles="admin-gui,admin,manager-gui,manager"/>
+<role rolename="manager-status"/>
+
+<user username="tomcat" password="123456" roles="tomcat,manager-gui,manager-status"/>
 ```
-- 编辑配置文件：`vim /usr/program/tomcat7/conf/server.xml`
-	- 打开默认被注释的连接池配置：
-		- 默认值：
-		``` xml
-	    <!--
-	    <Executor name="tomcatThreadPool" namePrefix="catalina-exec-"
-	        maxThreads="150" minSpareThreads="4"/>
-	    -->
-	    ```
-	    - 修改为：
-	    ``` xml
-	    <Executor
-	            name="tomcatThreadPool"
-	            namePrefix="catalina-exec-"
-	            maxThreads="500"
-	            minSpareThreads="30"
-	            maxIdleTime="60000"
-	            prestartminSpareThreads = "true"
-	            maxQueueSize = "100"
-	    />
-	    ```
-        - 重点参数解释：
-            - maxThreads，最大并发数，默认设置 200，一般建议在 500 ~ 800，根据硬件设施和业务来判断
-            - minSpareThreads，Tomcat 初始化时创建的线程数，默认设置 25
-            - prestartminSpareThreads，在 Tomcat 初始化的时候就初始化 minSpareThreads 的参数值，如果不等于 true，minSpareThreads 的值就没啥效果了
-            - maxQueueSize，最大的等待队列数，超过则拒绝请求
-            - maxIdleTime，如果当前线程大于初始化线程，那空闲线程存活的时间，单位毫秒，默认60000=60秒=1分钟。
-    - 修改默认的链接参数配置：
-        - 默认值：
-        ``` xml
-        <Connector 
-            port="8080" 
-            protocol="HTTP/1.1" 
-            connectionTimeout="20000" 
-            redirectPort="8443" 
-        />
-        ```
-        - 修改为：
-        ``` xml
-        <Connector 
-           executor="tomcatThreadPool"
-           port="8080" 
-           protocol="org.apache.coyote.http11.Http11Nio2Protocol" 
-           connectionTimeout="20000" 
-           maxConnections="10000" 
-           redirectPort="8443" 
-           enableLookups="false" 
-           acceptCount="100" 
-           maxPostSize="10485760" 
-           maxHttpHeaderSize="8192" 
-           compression="on" 
-           disableUploadTimeout="true" 
-           compressionMinSize="2048" 
-           acceptorThreadCount="2" 
-           compressableMimeType="text/html,text/xml,text/plain,text/css,text/javascript,application/javascript" 
-           URIEncoding="utf-8"
-        />
-        ```
-        - 重点参数解释：
-            - protocol，Tomcat 8 设置 nio2 更好：org.apache.coyote.http11.Http11Nio2Protocol（如果这个用不了，就用下面那个）
-            - protocol，Tomcat 6、7 设置 nio 更好：org.apache.coyote.http11.Http11NioProtocol
-            - enableLookups，禁用DNS查询
-            - acceptCount，指定当所有可以使用的处理请求的线程数都被使用时，可以放到处理队列中的请求数，超过这个数的请求将不予处理，默认设置 100
-            - maxPostSize，以 FORM URL 参数方式的 POST 提交方式，限制提交最大的大小，默认是 2097152(2兆)，它使用的单位是字节。10485760 为 10M。如果要禁用限制，则可以设置为 -1。
-            - acceptorThreadCount，用于接收连接的线程的数量，默认值是1。一般这个指需要改动的时候是因为该服务器是一个多核CPU，如果是多核 CPU 一般配置为 2.
-            - maxHttpHeaderSize，http请求头信息的最大程度，超过此长度的部分不予处理。一般8K。
-	- 禁用 AJP（如果你服务器没有使用 Apache） 
-		- 把下面这一行注释掉，默认 Tomcat 是开启的。
-		``` xml
-		<!-- <Connector port="8009" protocol="AJP/1.3" redirectPort="8443" /> -->
-		```
+- 编辑配置文件：`vim /usr/program/tomcat8/conf/server.xml`
 
+#### 打开默认被注释的连接池配置
 
+- 默认值：
 
-## JVM 优化
+``` xml
+<!--
+<Executor name="tomcatThreadPool" namePrefix="catalina-exec-"
+    maxThreads="150" minSpareThreads="4"/>
+-->
+```
+
+- 修改为：
+
+``` xml
+<Executor
+        name="tomcatThreadPool"
+        namePrefix="catalina-exec-"
+        maxThreads="500"
+        minSpareThreads="30"
+        maxIdleTime="60000"
+        prestartminSpareThreads = "true"
+        maxQueueSize = "100"
+/>
+```
+
+- 重点参数解释：
+    - maxThreads，最大并发数，默认设置 200，一般建议在 500 ~ 800，根据硬件设施和业务来判断
+    - minSpareThreads，Tomcat 初始化时创建的线程数，默认设置 25
+    - prestartminSpareThreads，在 Tomcat 初始化的时候就初始化 minSpareThreads 的参数值，如果不等于 true，minSpareThreads 的值就没啥效果了
+    - maxQueueSize，最大的等待队列数，超过则拒绝请求
+    - maxIdleTime，如果当前线程大于初始化线程，那空闲线程存活的时间，单位毫秒，默认60000=60秒=1分钟。
+
+#### 修改默认的链接参数配置
+
+- 默认值：
+
+``` xml
+<Connector 
+    port="8080" 
+    protocol="HTTP/1.1" 
+    connectionTimeout="20000" 
+    redirectPort="8443" 
+/>
+```
+
+- 修改为：
+
+``` xml
+<Connector 
+   executor="tomcatThreadPool"
+   port="8080" 
+   protocol="org.apache.coyote.http11.Http11Nio2Protocol" 
+   connectionTimeout="20000" 
+   maxConnections="10000" 
+   redirectPort="8443" 
+   enableLookups="false" 
+   acceptCount="100" 
+   maxPostSize="10485760" 
+   maxHttpHeaderSize="8192" 
+   disableUploadTimeout="true" 
+   URIEncoding="utf-8"
+/>
+```
+
+- 重点参数解释：
+    - protocol，Tomcat 8 设置 nio2 更好：org.apache.coyote.http11.Http11Nio2Protocol（如果这个用不了，就用下面那个）
+    - protocol，Tomcat 6、7 设置 nio 更好：org.apache.coyote.http11.Http11NioProtocol
+    - enableLookups，禁用DNS查询，tomcat 8 默认已经是禁用了。
+    - maxConnections，最大连接数，tomcat 8 默认设置 10000
+    - acceptCount，指定当所有可以使用的处理请求的线程数都被使用时，可以放到处理队列中的请求数，超过这个数的请求将不予处理，默认设置 100
+    - maxPostSize，以 FORM URL 参数方式的 POST 提交方式，限制提交最大的大小，默认是 2097152(2兆)，它使用的单位是字节。10485760 为 10M。如果要禁用限制，则可以设置为 -1。
+    - maxHttpHeaderSize，http请求头信息的最大程度，超过此长度的部分不予处理。一般8K。
+- 禁用 AJP（如果你服务器没有使用 Apache） 
+	- 把下面这一行注释掉，默认 Tomcat 是开启的。
+
+``` xml
+<!-- <Connector port="8009" protocol="AJP/1.3" redirectPort="8443" /> -->
+```
+
+- 关闭自动部署功能：
+- 旧值：
+```
+<Host name="localhost"  appBase="webapps" unpackWARs="true" autoDeploy="true">
+```
+
+- 新值：
+```
+<Host name="localhost"  appBase="webapps" unpackWARs="true" autoDeploy="false">
+```
+
+## JVM 优化（JDK 8）
 
 - 模型资料来源：<http://xmuzyq.iteye.com/blog/599750>
 - 配比资料：<http://www.jianshu.com/p/d45e12241af4>
-- Java 的内存模型分为：
-	- Young，年轻代（易被 GC）。Young 区被划分为三部分，Eden 区和两个大小严格相同的 Survivor 区，其中 Survivor 区间中，某一时刻只有其中一个是被使用的，另外一个留做垃圾收集时复制对象用，在 Young 区间变满的时候，minor GC 就会将存活的对象移到空闲的Survivor 区间中，根据 JVM 的策略，在经过几次垃圾收集后，任然存活于 Survivor 的对象将被移动到 Tenured  区间。
-	- Tenured，终身代。Tenured 区主要保存生命周期长的对象，一般是一些老的对象，当一些对象在 Young 复制转移一定的次数以后，对象就会被转移到 Tenured 区，一般如果系统中用了 application 级别的缓存，缓存中的对象往往会被转移到这一区间。
-	- Perm，永久代。主要保存 class,method,filed 对象，这部门的空间一般不会溢出，除非一次性加载了很多的类，不过在涉及到热部署的应用服务器的时候，有时候会遇到 java.lang.OutOfMemoryError : PermGen space 的错误，造成这个错误的很大原因就有可能是每次都重新部署，但是重新部署后，类的 class 没有被卸载掉，这样就造成了大量的 class 对象保存在了 perm 中，这种情况下，一般重新启动应用服务器可以解决问题。
-- Linux 修改 /usr/program/tomcat7/bin/catalina.sh 文件，把下面信息添加到文件第一行。
-	- 如果服务器只运行一个 Tomcat
+- JDK8 配比：[关键系统的JVM参数推荐(2018仲夏版)](https://mp.weixin.qq.com/s/FHY0MelBfmgdRpT4zWF9dQ)
+- JDK8 常用配比总结 8G 内存：`CATALINA_OPTS="-Dfile.encoding=UTF-8 -Xms4g -Xmx4g"`
+- Java 的内存模型看：[这篇文章](Java-bin.md)
+- Linux 修改 /usr/program/tomcat8/bin/catalina.sh 文件，把下面信息添加到文件第一行。
+	- 如果服务器只运行一个 Tomcat，堆栈信息可以这样配置：
 		- 机子内存如果是 4G：
-			- `CATALINA_OPTS="-Dfile.encoding=UTF-8 -server -Xms2048m -Xmx2048m -Xmn1024m -XX:PermSize=256m -XX:MaxPermSize=512m -XX:SurvivorRatio=10 -XX:MaxTenuringThreshold=15 -XX:NewRatio=2 -XX:+DisableExplicitGC"`
+			- `CATALINA_OPTS="-Dfile.encoding=UTF-8 -server -Xms2g -Xmx2g"`
 		- 机子内存如果是 8G：
-			- `CATALINA_OPTS="-Dfile.encoding=UTF-8 -server -Xms4096m -Xmx4096m -Xmn2048m -XX:PermSize=256m -XX:MaxPermSize=512m -XX:SurvivorRatio=10 -XX:MaxTenuringThreshold=15 -XX:NewRatio=2 -XX:+DisableExplicitGC"`
+			- `CATALINA_OPTS="-Dfile.encoding=UTF-8 -server -Xms4g -Xmx4g"`
 		- 机子内存如果是 16G：
-			- `CATALINA_OPTS="-Dfile.encoding=UTF-8 -server -Xms8192m -Xmx8192m -Xmn4096m -XX:PermSize=256m -XX:MaxPermSize=512m -XX:SurvivorRatio=10 -XX:MaxTenuringThreshold=15 -XX:NewRatio=2 -XX:+DisableExplicitGC"`
+			- `CATALINA_OPTS="-Dfile.encoding=UTF-8 -server -Xms8g -Xmx8g"`
 		- 机子内存如果是 32G：
-			- `CATALINA_OPTS="-Dfile.encoding=UTF-8 -server -Xms16384m -Xmx16384m -Xmn8192m -XX:PermSize=256m -XX:MaxPermSize=512m -XX:SurvivorRatio=10 -XX:MaxTenuringThreshold=15 -XX:NewRatio=2 -XX:+DisableExplicitGC"`
+			- `CATALINA_OPTS="-Dfile.encoding=UTF-8 -server -Xms16g -Xmx16g"`
 	- 如果是 8G 开发机
-		- `-Xms2048m -Xmx2048m -XX:NewSize=512m -XX:MaxNewSize=1024m -XX:PermSize=256m -XX:MaxPermSize=512m`
+		- `-Xms2g -Xmx2g`
 	- 如果是 16G 开发机
-		- `-Xms4096m -Xmx4096m -XX:NewSize=1024m -XX:MaxNewSize=2048m -XX:PermSize=256m -XX:MaxPermSize=512m`
-	- 参数说明：
-	``` nginx 
-	-Dfile.encoding：默认文件编码
-	-server：表示这是应用于服务器的配置，JVM 内部会有特殊处理的
-	-Xmx1024m：设置JVM最大可用内存为1024MB
-	-Xms1024m：设置JVM最小内存为1024m。此值可以设置与-Xmx相同，以避免每次垃圾回收完成后JVM重新分配内存。
-	-Xmn1024m：设置JVM新生代大小（JDK1.4之后版本）。一般-Xmn的大小是-Xms的1/2左右，不要设置的过大或过小，过大导致老年代变小，频繁Full GC，过小导致minor GC频繁。如果不设置-Xmn，可以采用-XX:NewRatio=2来设置，也是一样的效果
-	-XX:NewSize：设置新生代大小
-	-XX:MaxNewSize：设置最大的新生代大小
-	-XX:PermSize：设置永久代大小（在 Tomcat8 移出了该参数）
-	-XX:MaxPermSize：设置最大永久代大小（在 Tomcat8 移出了该参数）
-	-XX:NewRatio=4：设置年轻代（包括 Eden 和两个 Survivor 区）与终身代的比值（除去永久代）。设置为 4，则年轻代与终身代所占比值为 1：4，年轻代占整个堆栈的 1/5
-	-XX:MaxTenuringThreshold=10：设置垃圾最大年龄，默认为：15。如果设置为 0 的话，则年轻代对象不经过 Survivor 区，直接进入年老代。对于年老代比较多的应用，可以提高效率。如果将此值设置为一个较大值，则年轻代对象会在 Survivor 区进行多次复制，这样可以增加对象再年轻代的存活时间，增加在年轻代即被回收的概论。需要注意的是，设置了 -XX:MaxTenuringThreshold，并不代表着，对象一定在年轻代存活15次才被晋升进入老年代，它只是一个最大值，事实上，存在一个动态计算机制，计算每次晋入老年代的阈值，取阈值和MaxTenuringThreshold中较小的一个为准。
-	-XX:+DisableExplicitGC：这个将会忽略手动调用 GC 的代码使得 System.gc() 的调用就会变成一个空调用，完全不会触发任何 GC
-	```
+		- `-Xms4g -Xmx4g`
+	- 还有一个参数：`-XX:MetaspaceSize=128M -XX:MaxMetaspaceSize=512M`
+		- 这个可以通过调试来确认什么值合适，一般通过使用 `jstat -gc PID 250 20`，查看 gc 情况下的 MC、MU 情况。
+		- 默认 MaxMetaspaceSize 是 -1，无上限，所以如果硬件还行，不配置也没啥问题。
+		- 自己也了解 JVM 实际情况，那就根据实际情况调整。一般项目可以推荐：`-XX:MetaspaceSize=128M -XX:MaxMetaspaceSize=512M`
 - Windows 修改 /tomcat7/bin/catalina.bat 文件，找到这一行：`echo Using CATALINA_BASE:   "%CATALINA_BASE%"`，然后在其上面添加如下内容，此方法只对解压版的 Tomcat 有效果，对于安装版本的需要点击安装后任务栏上的那个 Tomcat 图标，打开配置中有一个 `Java` Tab 的进行编辑。
 ``` nginx
 set JAVA_OPTS=%JAVA_OPTS% -Dfile.encoding="UTF-8" -Dsun.jnu.encoding="UTF8" -Ddefault.client.encoding="UTF-8" -Duser.language=Zh
-set JAVA_OPTS=%JAVA_OPTS% -server -Xms4096m -Xmx4096m -Xmn2048m -XX:PermSize=256m -XX:MaxPermSize=512m -XX:SurvivorRatio=10 -XX:MaxTenuringThreshold=15 -XX:NewRatio=2 -XX:+DisableExplicitGC
+set JAVA_OPTS=%JAVA_OPTS% -server -Xms4g -Xmx4g
 ```
+
+## tomcat-manager 监控配置（tomcat 8.0.53）
+
+####  开启步骤
+
+- 不同的 Tomcat 版本会有差异。
+- 官网文档：<https://tomcat.apache.org/tomcat-8.0-doc/manager-howto.html>
+- **先确保解压的 tomcat/webapps 下有 manager 项目**
+- 在配置文件里面添加可访问用户：`vim /usr/local/tomcat8/conf/tomcat-users.xml`，比如：
+
+```
+<role rolename="tomcat"/>
+<role rolename="manager-gui"/>
+<role rolename="manager-status"/>
+
+<user username="tomcat" password="123456" roles="tomcat,manager-gui,manager-status"/>
+```
+
+- 正常情况下，manager ui 界面只运行内网：127.0.0.1 访问，这里我们要关闭这个限制。
+- 修改 webapps 下 manager 项目下的配置：`vim /usr/local/tomcat8/webapps/manager/META-INF/context.xml`
+- 旧值：
+
+```
+<Context antiResourceLocking="false" privileged="true" >
+  <Valve className="org.apache.catalina.valves.RemoteAddrValve" allow="127\.\d+\.\d+\.\d+|::1|0:0:0:0:0:0:0:1" />
+  <Manager sessionAttributeValueClassNameFilter="java\.lang\.(?:Boolean|Integer|Long|Number|String)|org\.apache\.catalina\.filters\.CsrfPreventionFilter\$LruCache(?:\$1)?|jav
+</Context>
+```
+
+- 新值：
+
+```
+<Context antiResourceLocking="false" privileged="true" >
+  <!--
+  <Valve className="org.apache.catalina.valves.RemoteAddrValve" allow="127\.\d+\.\d+\.\d+|::1|0:0:0:0:0:0:0:1" />
+  -->
+  <Manager sessionAttributeValueClassNameFilter="java\.lang\.(?:Boolean|Integer|Long|Number|String)|org\.apache\.catalina\.filters\.CsrfPreventionFilter\$LruCache(?:\$1)?|jav
+</Context>
+```
+
+- 浏览器访问：<http://120.78.72.28:8080/manager/status>
+
+#### 可以看到 JVM 堆栈信息
+
+![image.png](https://upload-images.jianshu.io/upload_images/12159-e86a32e685f91dde.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+#### 可以看到 HTTP 连接数情况
+
+![image.png](https://upload-images.jianshu.io/upload_images/12159-99d9fffee0c3c17f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+- 配置文件里面限制的最大线程数：`Max threads: 200`
+- 当前线程数：`Current thread count: 10`
+- 当前繁忙的线程数：`Current thread busy: 1`
+	- 如果当前繁忙线程已经是接近最大线程数，那基本可以表示负载到了
+- 保持连接数：`Keep alive sockets count: 1`
+
 
 ## Tomcat 8 的 Log 分割
 
@@ -302,6 +365,21 @@ EXPOSE 8081
     - **Tomcat 8.0.32**：`wget http://mirror.bit.edu.cn/apache/tomcat/tomcat-8/v8.0.32/bin/apache-tomcat-8.0.32.tar.gz`
     - **Tomcat 7.0.68**：`wget http://apache.fayea.com/tomcat/tomcat-7/v7.0.68/bin/apache-tomcat-7.0.68.tar.gz`
     - **Tomcat 6.0.45**：`wget http://mirrors.cnnic.cn/apache/tomcat/tomcat-6/v6.0.45/bin/apache-tomcat-6.0.45.tar.gz`
+
+## 其他问题
+
+
+#### log4j2 输出的时间与北京时间相差 8 小时
+
+- 原因是系统时区不对。
+- 设置时区：
+
+```
+timedatectl set-timezone Asia/Shanghai
+timedatectl status
+```
+
+
 
 ## 资料
 

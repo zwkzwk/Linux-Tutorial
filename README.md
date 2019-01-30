@@ -2,12 +2,16 @@
 
 ## 初衷(Original Intention)
 
-- 整理下自己所学
+- 整理下自己所学。**但是比较随意，所以很多地方不够严谨，所以请带着批评的思维阅读。**
 - 带动更多的人进入 Linux 世界，特别是做 Java 开发的人
 - Github 项目地址，欢迎 `Fork`、`Star`：<https://github.com/judasn/Linux-Tutorial>
 - 文章中用到的一些安装包归纳整理：<http://pan.baidu.com/s/1skAwrFn>
 - Gitbook 在线阅读地址：<https://youmeek.gitbooks.io/linux-tutorial/content/>
 - **学得越多越是明白一个人的力量是不够的，我只是起了一个引子，希望你能一起参与，真心希望！！！（鞠躬）**
+
+## 优秀同行推荐
+
+- [Linux工具快速教程](http://linuxtools-rst.readthedocs.io/zh_CN/latest/base/index.html)
 
 ## 目录(Contents)
 
@@ -15,6 +19,7 @@
 - [Ubuntu 介绍](markdown-file/Ubuntu.md)
 - [Ubuntu 安装](markdown-file/Ubuntu-Install.md)
 - [Ubuntu 设置（目录）](markdown-file/ubuntu-settings/ubuntu-settings-toc.md)
+- [Kali Linux 介绍和设置（目录）](markdown-file/kali-linux-settings/kali-linux-toc.md)
 - [CentOS 介绍](markdown-file/CentOS.md)
 - [CentOS 6 安装](markdown-file/CentOS-Install.md)
 - [CentOS 7 安装](markdown-file/CentOS-7-Install.md)
@@ -31,9 +36,11 @@
 - [Linux 下常用压缩文件的解压、压缩](markdown-file/File-Extract-Compress.md)
 - [Yum 下载安装包及对应依赖包](markdown-file/Off-line-Yum-Install.md)
 - [Zsh 入门](markdown-file/Zsh.md)
+- [终端测速](markdown-file/speedtest.md)
 - [日常维护](markdown-file/maintenance.md)
 - [日常监控](markdown-file/monitor.md)
 - [nmon 系统性能监控工具](markdown-file/Nmon.md)
+- [Glances 安装和配置](markdown-file/Glances-Install-And-Settings.md)
 - [SSH（Secure Shell）介绍](markdown-file/SSH.md)
 - [FTP（File Transfer Protocol）介绍](markdown-file/FTP.md)
 - [VPN（Virtual Private Network）介绍](markdown-file/VPN.md)
@@ -59,9 +66,9 @@
 - [MongoDB 安装和配置](markdown-file/MongoDB-Install-And-Settings.md)
 - [Solr 安装和配置](markdown-file/Solr-Install-And-Settings.md)
 - [Jira 安装和配置](markdown-file/Jira-Install-And-Settings.md)
-- [Jenkins 安装和配置](markdown-file/Jenkins-Install-And-Settings.md)
 - [TeamCity 安装和配置](markdown-file/TeamCity-Install-And-Settings.md)
 - [Nginx 安装和配置](markdown-file/Nginx-Install-And-Settings.md)
+- [wrk 安装和配置](markdown-file/wrk-Install-And-Settings.md)
 - [FastDFS 安装和配置](markdown-file/FastDFS-Install-And-Settings.md)
 - [FastDFS 结合 GraphicsMagick](markdown-file/FastDFS-Nginx-Lua-GraphicsMagick.md)
 - [RabbitMQ 安装和配置](markdown-file/RabbitMQ-Install-And-Settings.md)
@@ -87,11 +94,14 @@
 - [CI 整套服务安装和使用](markdown-file/CI-Install-And-Usage.md)
 - [YApi 安装和配置](markdown-file/YApi-Install-And-Settings.md)
 - [Kafka 安装和配置](markdown-file/Kafka-Install-And-Settings.md)
+- [Hadoop 安装和配置](markdown-file/Hadoop-Install-And-Settings.md)
 - [Showdoc 安装和配置](markdown-file/Showdoc-Install-And-Settings.md)
 - [WordPress 安装和配置](markdown-file/WordPress-Install-And-Settings.md)
 - [GoAccess 安装和配置](markdown-file/GoAccess-Install-And-Settings.md)
 - [Portainer 安装和配置](markdown-file/Portainer-Install-And-Settings.md)
-
+- [Grafana 安装和配置](markdown-file/Grafana-Install-And-Settings.md)
+- [Ansible 安装和配置](markdown-file/Ansible-Install-And-Settings.md)
+- [Wormhole + Flink 最佳实践](markdown-file/Wormhole-Install-And-Settings.md)
 
 ## 联系(Contact)
 
@@ -129,4 +139,5 @@
 
 ## AD
 
-- [推荐：程序员的个性化网址导航：GitNavi.com](http://www.gitnavi.com)
+- [推荐：程序员的个性化网址导航：GitNavi.com](http://www.gitnavi.com/u/judasn/)
+- [适合后端开发者的前端 React-Admin](https://github.com/satan31415/umi-admin)

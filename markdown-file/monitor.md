@@ -33,6 +33,11 @@ root     pts/0    116.21.24.85     11:57    4.00s 16:18   0.01s w
 		- 查看 CPU 总的线程数：`grep 'processor' /proc/cpuinfo | sort -u | wc -l`
 - 第二行：
 	- 开始表示各个登录用户的情况，当前登录者是 root，登录者 IP 116.21.24.85
+- 还有一个简化版本的命令：`uptime`
+
+```
+10:56:16 up 26 days, 20:05,  1 user,  load average: 0.00, 0.01, 0.05
+```
 
 
 #### 命令：vmstat（判断 RAM 和 I/0 瓶颈）
@@ -178,6 +183,59 @@ Average:         0.50      0.00      0.50      0.00      8.94
 - `txcmp/s`：每秒钟发送出去的压缩包数目
 - `txmcst/s`：每秒钟接收到的多播包的包数目
 
+- 查看 TCP 相关的一些数据（每隔 1 秒采样一次，一共 5 次）：`sar -n TCP,ETCP 1 5`
+
+```
+Linux 3.10.0-693.2.2.el7.x86_64 (youmeek) 	07/17/2018 	_x86_64_	(2 CPU)
+
+12:05:47 PM  active/s passive/s    iseg/s    oseg/s
+12:05:48 PM      0.00      0.00      1.00      0.00
+
+12:05:47 PM  atmptf/s  estres/s retrans/s isegerr/s   orsts/s
+12:05:48 PM      0.00      0.00      0.00      0.00      0.00
+
+12:05:48 PM  active/s passive/s    iseg/s    oseg/s
+12:05:49 PM      0.00      0.00      1.00      1.00
+
+12:05:48 PM  atmptf/s  estres/s retrans/s isegerr/s   orsts/s
+12:05:49 PM      0.00      0.00      0.00      0.00      0.00
+
+12:05:49 PM  active/s passive/s    iseg/s    oseg/s
+12:05:50 PM      0.00      0.00      1.00      1.00
+
+12:05:49 PM  atmptf/s  estres/s retrans/s isegerr/s   orsts/s
+12:05:50 PM      0.00      0.00      0.00      0.00      0.00
+
+12:05:50 PM  active/s passive/s    iseg/s    oseg/s
+12:05:51 PM      0.00      0.00      3.00      3.00
+
+12:05:50 PM  atmptf/s  estres/s retrans/s isegerr/s   orsts/s
+12:05:51 PM      0.00      0.00      0.00      0.00      0.00
+
+12:05:51 PM  active/s passive/s    iseg/s    oseg/s
+12:05:52 PM      0.00      0.00      1.00      1.00
+
+12:05:51 PM  atmptf/s  estres/s retrans/s isegerr/s   orsts/s
+12:05:52 PM      0.00      0.00      0.00      0.00      0.00
+
+Average:     active/s passive/s    iseg/s    oseg/s
+Average:         0.00      0.00      1.40      1.20
+
+Average:     atmptf/s  estres/s retrans/s isegerr/s   orsts/s
+Average:         0.00      0.00      0.00      0.00      0.00
+```
+
+
+```
+- active/s：每秒钟本地主动开启的 tcp 连接，也就是本地程序使用 connect() 系统调用
+- passive/s：每秒钟从源端发起的 tcp 连接，也就是本地程序使用 accept() 所接受的连接
+- retrans/s: 每秒钟的 tcp 重传次数
+
+atctive 和 passive 的数目通常可以用来衡量服务器的负载：接受连接的个数（passive），下游连接的个数（active）。可以简单认为 active 为出主机的连接，passive 为入主机的连接；但这个不是很严格的说法，比如 loalhost 和 localhost 之间的连接。
+
+来自：https://zhuanlan.zhihu.com/p/39893236
+```
+
 ---------------------------------------------------------------------
 
 ## CPU 监控
@@ -217,6 +275,7 @@ Average:         0.50      0.00      0.50      0.00      8.94
 	- [htop 命令详解](https://blog.csdn.net/freeking101/article/details/79173903)
 - mpstat 实时监控 CPU 状态：`yum install -y sysstat`
 	- 可以具体到某个核心，比如我有 2 核的 CPU，因为 CPU 核心下标是从 0 开始，所以我要查看 0 的状况（间隔 3 秒获取一次指标，一共获取 5 次）：`mpstat -P 0 3 5`
+	- 打印总 CPU 和各个核心指标：`mpstat -P ALL 1`
 	- 获取所有核心的平均值：`mpstat 3 5`
 
 ```
@@ -235,6 +294,50 @@ Average:       0    0.20    0.00    0.20    0.00    0.00    0.00    0.00    0.00
 - %sys 系统进程消耗 CPU 情况
 - %iowait  表示 CPU 等待 IO 时间占整个 CPU 周期的百分比
 - %idle  显示 CPU 空闲时间占用 CPU 总时间的百分比
+
+#### 类似 top 的 pidstat
+
+- 安装：`yum install -y sysstat`
+- 每隔 2 秒采样一次，一共 5 次：`pidstat 2 5`
+
+```
+Linux 3.10.0-693.el7.x86_64 (youmeek) 	07/17/2018 	_x86_64_	(8 CPU)
+
+11:52:58 AM   UID       PID    %usr %system  %guest    %CPU   CPU  Command
+11:53:00 AM     0     16813    0.50    0.99    0.00    1.49     1  pidstat
+11:53:00 AM     0     24757   50.99   12.87    0.00   63.86     0  java
+11:53:00 AM     0     24799   60.40    3.47    0.00   63.86     5  java
+11:53:00 AM     0     24841   99.50    7.43    0.00  100.00     0  java
+
+11:53:00 AM   UID       PID    %usr %system  %guest    %CPU   CPU  Command
+11:53:02 AM     0     24757   56.50    0.50    0.00   57.00     0  java
+11:53:02 AM     0     24799  100.00    6.50    0.00  100.00     5  java
+11:53:02 AM     0     24841   58.00    2.50    0.00   60.50     0  java
+
+11:53:02 AM   UID       PID    %usr %system  %guest    %CPU   CPU  Command
+11:53:04 AM     0     16813    0.00    1.00    0.00    1.00     2  pidstat
+11:53:04 AM     0     24757   62.00    5.50    0.00   67.50     0  java
+11:53:04 AM     0     24799   54.00   14.00    0.00   68.00     5  java
+11:53:04 AM     0     24841   39.50    9.00    0.00   48.50     0  java
+
+11:53:04 AM   UID       PID    %usr %system  %guest    %CPU   CPU  Command
+11:53:06 AM     0     16813    0.50    0.50    0.00    1.00     2  pidstat
+11:53:06 AM     0     24757   80.00   13.50    0.00   93.50     0  java
+11:53:06 AM     0     24799   56.50    0.50    0.00   57.00     5  java
+11:53:06 AM     0     24841    1.00    0.50    0.00    1.50     0  java
+
+11:53:06 AM   UID       PID    %usr %system  %guest    %CPU   CPU  Command
+11:53:08 AM     0     16813    0.00    0.50    0.00    0.50     2  pidstat
+11:53:08 AM     0     24757   58.50    1.00    0.00   59.50     0  java
+11:53:08 AM     0     24799   60.00    1.50    0.00   61.50     5  java
+11:53:08 AM     0     24841    1.00    0.50    0.00    1.50     0  java
+
+Average:      UID       PID    %usr %system  %guest    %CPU   CPU  Command
+Average:        0     16813    0.20    0.60    0.00    0.80     -  pidstat
+Average:        0     24757   61.58    6.69    0.00   68.26     -  java
+Average:        0     24799   66.47    5.19    0.00   71.66     -  java
+Average:        0     24841   39.92    3.99    0.00   43.91     -  java
+```
 
 ---------------------------------------------------------------------
 
@@ -271,6 +374,41 @@ Total:       16080      15919        160
 ```
 
 - 以上的结果重点关注是：`-/+ buffers/cache`，这一行代表实际使用情况。
+
+
+##### pidstat 采样内存使用情况
+
+- 安装：`yum install -y sysstat`
+- 每隔 2 秒采样一次，一共 3 次：`pidstat -r 2 3`
+
+```
+Linux 3.10.0-693.el7.x86_64 (youmeek) 	07/17/2018 	_x86_64_	(8 CPU)
+
+11:56:34 AM   UID       PID  minflt/s  majflt/s     VSZ    RSS   %MEM  Command
+11:56:36 AM     0     23960    168.81      0.00  108312   1124   0.01  pidstat
+11:56:36 AM     0     24757      8.42      0.00 9360696 3862788  23.75  java
+11:56:36 AM     0     24799      8.91      0.00 10424088 4988468  30.67  java
+11:56:36 AM     0     24841     11.39      0.00 10423576 4968428  30.54  java
+
+11:56:36 AM   UID       PID  minflt/s  majflt/s     VSZ    RSS   %MEM  Command
+11:56:38 AM     0     23960    169.50      0.00  108312   1200   0.01  pidstat
+11:56:38 AM     0     24757      6.00      0.00 9360696 3862788  23.75  java
+11:56:38 AM     0     24799      5.50      0.00 10424088 4988468  30.67  java
+11:56:38 AM     0     24841      7.00      0.00 10423576 4968428  30.54  java
+
+11:56:38 AM   UID       PID  minflt/s  majflt/s     VSZ    RSS   %MEM  Command
+11:56:40 AM     0     23960    160.00      0.00  108312   1200   0.01  pidstat
+11:56:40 AM     0     24757      6.50      0.00 9360696 3862788  23.75  java
+11:56:40 AM     0     24799      6.00      0.00 10424088 4988468  30.67  java
+11:56:40 AM     0     24841      8.00      0.00 10423576 4968428  30.54  java
+
+Average:      UID       PID  minflt/s  majflt/s     VSZ    RSS   %MEM  Command
+Average:        0     23960    166.11      0.00  108312   1175   0.01  pidstat
+Average:        0     24757      6.98      0.00 9360696 3862788  23.75  java
+Average:        0     24799      6.81      0.00 10424088 4988468  30.67  java
+Average:        0     24841      8.80      0.00 10423576 4968428  30.54  java
+```
+
 
 ---------------------------------------------------------------------
 
@@ -316,19 +454,23 @@ vda               0.00     0.00    0.00    1.68     0.00    16.16    19.20     0
 	- `rkB/s`: 每秒读数据量(kB为单位)
 	- `wkB/s`: 每秒写数据量(kB为单位)
 	- `avgrq-sz`:平均每次IO操作的数据量(扇区数为单位)
-	- `avgqu-sz`: 平均等待处理的IO请求队列长度
-	- `await`: 平均每次IO请求等待时间(包括等待时间和处理时间，毫秒为单位)
+	- `avgqu-sz`: 平均等待处理的IO请求队列长度（队列长度大于 1 表示设备处于饱和状态。）
+	- `await`: 系统发往 IO 设备的请求的平均响应时间(毫秒为单位)。这包括请求排队的时间，以及请求处理的时间。超过经验值的平均响应时间表明设备处于饱和状态，或者设备有问题。
 	- `svctm`: 平均每次IO请求的处理时间(毫秒为单位)
 	- `%util`: 采用周期内用于IO操作的时间比率，即IO队列非空的时间比率（就是繁忙程度，值越高表示越繁忙）
 - **总结**
 	- `iowait%` 表示CPU等待IO时间占整个CPU周期的百分比，如果iowait值超过50%，或者明显大于%system、%user以及%idle，表示IO可能存在问题。
-	- `%util` 表示磁盘忙碌情况，一般该值超过80%表示该磁盘可能处于繁忙状态
+	- `%util` （重点参数）表示磁盘忙碌情况，一般该值超过80%表示该磁盘可能处于繁忙状态
 
 
 #### 硬盘 IO 监控
 
 - 安装 iotop：`yum install -y iotop`
-- 查看命令：`iotop`
+- 查看所有进程 I/O 情况命令：`iotop`
+- 只查看当前正在处理 I/O 的进程：`iotop -o`
+- 只查看当前正在处理 I/O 的线程，每隔 5 秒刷新一次：`iotop -o -d 5`
+- 只查看当前正在处理 I/O 的进程（-P 参数决定），每隔 5 秒刷新一次：`iotop -o -P -d 5`
+- 只查看当前正在处理 I/O 的进程（-P 参数决定），每隔 5 秒刷新一次，使用 KB/s 单位（默认是 B/s）：`iotop -o -P -k -d 5`
 - 使用 dd 命令测量服务器延迟：`dd if=/dev/zero of=/opt/ioTest2.txt bs=512 count=1000 oflag=dsync`
 - 使用 dd 命令来测量服务器的吞吐率（写速度)：`dd if=/dev/zero of=/opt/ioTest1.txt bs=1G count=1 oflag=dsync`
 	- 该命令创建了一个 10M 大小的文件 ioTest1.txt，其中参数解释：
@@ -361,6 +503,39 @@ Timing cached reads:   3462 MB in  2.00 seconds = 1731.24 MB/sec
 Timing buffered disk reads: 806 MB in  3.00 seconds = 268.52 MB/sec
 ```
 
+
+##### pidstat 采样硬盘使用情况
+
+- 安装：`yum install -y sysstat`
+- 每隔 2 秒采样一次，一共 3 次：`pidstat -d 2 3`
+
+```
+Linux 3.10.0-693.el7.x86_64 (youmeek) 	07/17/2018 	_x86_64_	(8 CPU)
+
+11:57:29 AM   UID       PID   kB_rd/s   kB_wr/s kB_ccwr/s  Command
+
+11:57:31 AM   UID       PID   kB_rd/s   kB_wr/s kB_ccwr/s  Command
+11:57:33 AM     0     24757      0.00      2.00      0.00  java
+11:57:33 AM     0     24799      0.00     14.00      0.00  java
+
+11:57:33 AM   UID       PID   kB_rd/s   kB_wr/s kB_ccwr/s  Command
+11:57:35 AM     0     24841      0.00      8.00      0.00  java
+
+Average:      UID       PID   kB_rd/s   kB_wr/s kB_ccwr/s  Command
+Average:        0     24757      0.00      0.66      0.00  java
+Average:        0     24799      0.00      4.65      0.00  java
+Average:        0     24841      0.00      2.66      0.00  java
+```
+
+- 输出指标含义：
+
+```
+kB_rd/s: 每秒进程从磁盘读取的数据量(以 kB 为单位)
+kB_wr/s: 每秒进程向磁盘写的数据量(以 kB 为单位)
+kB_ccwr/s：任务取消的写入磁盘的 KB。当任务截断脏的 pagecache 的时候会发生。
+```
+
+
 ---------------------------------------------------------------------
 
 
@@ -372,12 +547,28 @@ Timing buffered disk reads: 806 MB in  3.00 seconds = 268.52 MB/sec
 	- 如果没有 EPEL 源：`yum install -y epel-release`
 - 常用命令：
 	- `iftop`：默认是监控第一块网卡的流量
-	- `iftop -i eth1`：监控eth1
+	- `iftop -i eth0`：监控 eth0
 	- `iftop -n`：直接显示IP, 不进行DNS反解析
 	- `iftop -N`：直接显示连接埠编号, 不显示服务名称
 	- `iftop -F 192.168.1.0/24 or 192.168.1.0/255.255.255.0`：显示某个网段进出封包流量
+    - `iftop -nP`：显示端口与 IP 信息
 
-### 端口使用情况
+``` nginx
+中间部分：外部连接列表，即记录了哪些ip正在和本机的网络连接
+
+右边部分：实时参数分别是该访问 ip 连接到本机 2 秒，10 秒和 40 秒的平均流量
+
+=> 代表发送数据，<= 代表接收数据
+
+底部会显示一些全局的统计数据，peek 是指峰值情况，cumm 是从 iftop 运行至今的累计情况，而 rates 表示最近 2 秒、10 秒、40 秒内总共接收或者发送的平均网络流量。
+
+TX:（发送流量）  cumm:   143MB   peak:   10.5Mb    rates:   1.03Mb  1.54Mb  2.10Mb
+RX:（接收流量）          12.7GB          228Mb              189Mb   191Mb   183Mb
+TOTAL:（总的流量）       12.9GB          229Mb              190Mb   193Mb   185MbW
+
+```
+
+### 端口使用情况（也可以用来查看端口占用）
 
 #### lsof
 
@@ -422,18 +613,55 @@ tcp6       0      0 :::8066                 :::*                    LISTEN      
 tcp6       0      0 :::43107                :::*                    LISTEN      12011/java 
 ```
 
-- 查看当前连接80端口的机子有多少：`netstat -an|grep 80|sort -r`
+- 查看当前连接80端口的机子有多少，并且是属于什么状态：`netstat -an|grep 80|sort -r`
 - 查看已经连接的IP有多少连接数：`netstat -ntu | awk '{print $5}' | cut -d: -f1 | sort | uniq -c | sort -n`
 - 查看已经连接的IP有多少连接数，只显示前 5 个：`netstat -ntu | awk '{print $5}' | cut -d: -f1 | sort | uniq -c | sort -n | head -5`
-- 统计当前连接的一些状态情况：`netstat -nat |awk '{print $6}'|sort|uniq -c|sort -rn`
+- 查看每个 ip 跟服务器建立的连接数：`netstat -nat|awk '{print$5}'|awk -F : '{print$1}'|sort|uniq -c|sort -rn`
 
 ```
-8 TIME_WAIT
-8 ESTABLISHED
-7 LISTEN
-1 Foreign
-1 established)
-1 CLOSE_WAIT
+262 127.0.0.1
+118
+103 172.22.100.141
+ 12 172.22.100.29
+  7 172.22.100.183
+  6 116.21.17.144
+  6 0.0.0.0
+  5 192.168.1.109
+  4 172.22.100.32
+  4 172.22.100.121
+  4 172.22.100.108
+  4 172.18.1.39
+  3 172.22.100.2
+  3 172.22.100.190
+```
+
+
+- 统计当前连接的一些状态情况：`netstat -n | awk '/^tcp/ {++S[$NF]} END {for(a in S) print a, S[a]}'` 或者 `netstat -nat |awk '{print $6}'|sort|uniq -c|sort -rn`
+
+```
+TIME_WAIT 96（是表示系统在等待客户端响应，以便再次连接时候能快速响应，如果积压很多，要开始注意了，准备阻塞了。这篇文章可以看下：http://blog.51cto.com/jschu/1728001）
+CLOSE_WAIT 11（如果积压很多，要开始注意了，准备阻塞了。可以看这篇文章：http://blog.51cto.com/net881004/2164020）
+FIN_WAIT2 17
+ESTABLISHED 102（表示正常数据传输状态）
+```
+
+- TIME_WAIT 和 CLOSE_WAIT 说明：
+
+```
+Linux 系统下，TCP连接断开后，会以TIME_WAIT状态保留一定的时间，然后才会释放端口。当并发请求过多的时候，就会产生大量的TIME_WAIT状态 的连接，无法及时断开的话，会占用大量的端口资源和服务器资源。这个时候我们可以优化TCP的内核参数，来及时将TIME_WAIT状态的端口清理掉。
+
+来源：http://zhangbin.junxilinux.com/?p=219
+
+=================================
+
+出现大量close_wait的现象，主要原因是某种情况下对方关闭了socket链接，但是另一端由于正在读写，没有关闭连接。代码需要判断socket，一旦读到0，断开连接，read返回负，检查一下errno，如果不是AGAIN，就断开连接。
+Linux分配给一个用户的文件句柄是有限的，而TIME_WAIT和CLOSE_WAIT两种状态如果一直被保持，那么意味着对应数目的通道就一直被占着，一旦达到句柄数上限，新的请求就无法被处理了，接着就是大量Too Many Open Files异常，导致tomcat崩溃。关于TIME_WAIT过多的解决方案参见TIME_WAIT数量太多。
+
+常见错误原因：
+1.代码层面上未对连接进行关闭，比如关闭代码未写在 finally 块关闭，如果程序中发生异常就会跳过关闭代码，自然未发出指令关闭，连接一直由程序托管，内核也无权处理，自然不会发出 FIN 请求，导致连接一直在 CLOSE_WAIT 。
+2.程序响应过慢，比如双方进行通讯，当客户端请求服务端迟迟得不到响应，就断开连接，重新发起请求，导致服务端一直忙于业务处理，没空去关闭连接。这种情况也会导致这个问题。一般如果有多个节点，nginx 进行负载，其中某个节点很高，其他节点不高，那可能就是负载算法不正常，都落在一台机子上了，以至于它忙不过来。
+
+来源：https://juejin.im/post/5b59e61ae51d4519634fe257
 ```
 
 - 查看网络接口接受、发送的数据包情况（每隔 3 秒统计一次）：`netstat -i 3`
@@ -454,12 +682,12 @@ eth0      1500 10903437      0      0 0      10847867      0      0      0 BMRU
 lo       65536   453650      0      0 0        453650      0      0      0 LRU
 ```
 
-- 接收：
+- 接收（该值是历史累加数据，不是瞬间数据，要计算时间内的差值需要自己减）：
 	- RX-OK 已接收字节数
 	- RX-ERR 已接收错误字节数（数据值大说明网络存在问题）
 	- RX-DRP 已丢失字节数（数据值大说明网络存在问题）
 	- RX-OVR 由于误差而遗失字节数（数据值大说明网络存在问题）
-- 发送：
+- 发送（该值是历史累加数据，不是瞬间数据，要计算时间内的差值需要自己减）：
 	- TX-OK 已发送字节数
 	- TX-ERR 已发送错误字节数（数据值大说明网络存在问题）
 	- TX-DRP 已丢失字节数（数据值大说明网络存在问题）
@@ -513,6 +741,180 @@ Address: 180.97.33.107
 
 ---------------------------------------------------------------------
 
+## 查看 Linux 内核版本
+
+- 对于一些复杂的层面问题，一般都要先确认内核版本，好帮助分析：`uname -r`
+
+```
+3.10.0-693.2.2.el7.x86_64
+```
+
+
+## dmesg 打印内核信息
+
+- 开机信息存在：`tail -500f /var/log/dmesg`
+- 查看尾部信息：`dmesg -T | tail`
+	- 参数 `-T` 表示显示时间
+- 只显示 error 和 warning 信息：`dmesg --level=err,warn -T`
+- 有些 OOM 的错误会在这里显示，比如：
+
+```
+[1880957.563400] Out of memory: Kill process 18694 (perl) score 246 or sacrifice child
+[1880957.563408] Killed process 18694 (perl) total-vm:1972392kB, anon-rss:1953348kB, file-rss:0kB
+```
+
+## 查看系统日志
+
+- 查看系统日志：`tail -400f /var/log/messages`
+- 可能会看到类似以下异常：
+
+```
+Out of memory: Kill process 19452 (java) score 264 or sacrifice child
+```
+
+
+---------------------------------------------------------------------
+
+## 服务器故障排查顺序
+
+#### 请求时好时坏
+
+- 系统层面
+	- 查看负载、CPU、内存、上线时间、高资源进程 PID：`htop`
+	- 查看网络丢失情况：`netstat -i 3`，关注：RX-DRP、TX-DRP，如果两个任何一个有值，或者都有值，肯定是网络出了问题（该值是历史累加数据，不是瞬间数据）。
+- 应用层面
+	- 临时修改 nginx log 输出格式，输出完整信息，包括请求头
+
+```
+$request_body   请求体（含POST数据）
+$http_XXX       指定某个请求头（XXX为字段名，全小写）
+$cookie_XXX     指定某个cookie值（XXX为字段名，全小写）
+
+
+类似用法：
+log_format  special_main  '$remote_addr - $remote_user [$time_local] "$request" '
+    '$status $body_bytes_sent "$request_body" "$http_referer" '
+    '"$http_user_agent" $http_x_forwarded_for "appid=$http_appid,appver=$http_appver,vuser=$http_vuser" '
+    '"phpsessid=$cookie_phpsessid,vuser_cookie=$cookie___vuser" ';
+
+
+access_log  /home/wwwlogs/hicrew.log special_main;
+
+```
+
+
+
+#### CPU 高，负载高，访问慢（没有数据库）
+
+- **记录负载开始升高的时间**
+- 常见场景
+	- 虚拟机所在的宿主机资源瓶颈，多个虚拟机竞争资源
+	- 定时任务大量的任务并发
+	- 消息、请求堆积后恢复时的瞬时流量引起
+	- 持久化任务引起
+	- 更多可以看这篇：[线上异常排查总结](https://blog.csdn.net/freeiceflame/article/details/78006812)
+- 系统层面
+	- 查看负载、CPU、内存、上线时间、高资源进程 PID：`htop`
+	- 查看磁盘使用情况：`df -h`
+	- 查看磁盘当前情况：`iostat -x -k 3 3`。如果发现当前磁盘忙碌，则查看是哪个 PID 在忙碌：`iotop -o -P -k -d 5`
+	- 查看 PID 具体在写什么东西：`lsof -p PID`
+	- 查看系统日志：`tail -400f /var/log/messages`
+	- 查看简化线程树：`pstree -a >> /opt/pstree-20180915.log`
+	- 其他机子 ping（多个地区 ping），看下解析 IP 与网络丢包
+	- 查看网络节点情况：`traceroute www.youmeek.com`
+	- `ifconfig` 查看 dropped 和 error 是否在不断增加，判断网卡是否出现问题
+	- `nslookup` 命令查看 DNS 是否可用
+	- 如果 nginx 有安装：http_stub_status_module 模块，则查看当前统计
+	- 查看 TCP 和 UDP 应用
+		- `netstat -ntlp`
+		- `netstat -nulp`
+	- 统计当前连接的一些状态情况：`netstat -nat |awk '{print $6}'|sort|uniq -c|sort -rn`
+	- 查看每个 ip 跟服务器建立的连接数：`netstat -nat|awk '{print$5}'|awk -F : '{print$1}'|sort|uniq -c|sort -rn`
+	- 查看与后端应用端口连接的有多少：`lsof -i:8080|grep 'TCP'|wc -l`
+	- 跟踪程序（按 `Ctrl + C` 停止跟踪）：`strace -tt -T -v -f -e trace=file -o /opt/strace-20180915.log -s 1024 -p PID`
+	- 看下谁在线：`w`，`last`
+	- 看下执行了哪些命令：`history`
+- 程序、JVM 层面
+	- 保存、查看 Nginx 程序 log
+		- 通过 GoAccess 分析 log
+	- 保存、查看 Java 程序 log
+	- 使用内置 tomcat-manager 监控配置，或者使用类似工具：psi-probe
+	- 使用 `ps -ef | grep java`，查看进程 PID
+		- 根据高 CPU 的进程 PID，查看其线程 CPU 使用情况：`top -Hp PID`，找到占用 CPU 资源高的线程 PID
+	- 保存堆栈情况：`jstack -l PID >> /opt/jstack-tomcat1-PID-20180917.log`
+		- 把占用 CPU 资源高的线程十进制的 PID 转换成 16 进制：`printf "%x\n" PID`，比如：`printf "%x\n" 12401` 得到结果是：`3071`
+		- 在刚刚输出的那个 log 文件中搜索：`3071`，可以找到：`nid=0x3071`
+	- 使用 `jstat -gc PID 10000 10`，查看gc情况（截图）
+	- 使用 `jstat -gccause PID`：额外输出上次GC原因（截图）
+	- 使用 `jstat -gccause PID 10000 10`：额外输出上次GC原因，收集 10 次，每隔 10 秒
+	- 使用 `jmap -dump:format=b,file=/opt/dumpfile-tomcat1-PID-20180917.hprof PID`，生成堆转储文件
+		- 使用 jhat 或者可视化工具（Eclipse Memory Analyzer 、IBM HeapAnalyzer）分析堆情况。
+	- 结合代码解决内存溢出或泄露问题。
+	- 给 VM 增加 dump 触发参数：`-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/opt/tomcat-1.hprof`
+
+#### 一次 JVM 引起的 CPU 高排查
+
+- 使用 `ps -ef | grep java`，查看进程 PID
+	- 根据高 CPU 的进程 PID，查看其线程 CPU 使用情况：`top -Hp PID`，找到占用 CPU 资源高的线程 PID
+- 保存堆栈情况：`jstack -l PID >> /opt/jstack-tomcat1-PID-20181017.log`
+- 把占用 CPU 资源高的线程十进制的 PID 转换成 16 进制：`printf "%x\n" PID`，比如：`printf "%x\n" 12401` 得到结果是：`3071`
+- 在刚刚输出的那个 log 文件中搜索：`3071`，可以找到：`nid=0x3071`
+- 也可以在终端中直接看：`jstack PID |grep 十六进制线程 -A 30`，此时如果发现如下：
+
+```
+"GC task thread#0 (ParallelGC)" os_prio=0 tid=0x00007fd0ac01f000 nid=0x66f runnable 
+```
+
+- 这种情况一般是 heap 设置得过小，而又要频繁分配对象；二是内存泄露，对象一直不能被回收，导致 CPU 占用过高
+- 使用：`jstat -gcutil PID 3000 10`：
+- 正常情况结果应该是这样的：
+
+```
+S0     S1     E      O      M     CCS    YGC     YGCT    FGC    FGCT     GCT
+0.00   0.00  67.63  38.09  78.03  68.82    124    0.966     5    0.778    1.744
+0.00   0.00  67.68  38.09  78.03  68.82    124    0.966     5    0.778    1.744
+0.00   0.00  67.68  38.09  78.03  68.82    124    0.966     5    0.778    1.744
+0.00   0.00  67.68  38.09  78.03  68.82    124    0.966     5    0.778    1.744
+0.00   0.00  67.68  38.09  78.03  68.82    124    0.966     5    0.778    1.744
+0.00   0.00  67.68  38.09  78.03  68.82    124    0.966     5    0.778    1.744
+0.00   0.00  67.68  38.09  78.03  68.82    124    0.966     5    0.778    1.744
+0.00   0.00  67.68  38.09  78.03  68.82    124    0.966     5    0.778    1.744
+0.00   0.00  67.71  38.09  78.03  68.82    124    0.966     5    0.778    1.744
+0.00   0.00  67.71  38.09  78.03  68.82    124    0.966     5    0.778    1.744
+
+```
+
+- S0：SO 当前使用比例
+- S1：S1 当前使用比例
+- E：**Eden 区使用比例（百分比）（异常的时候，这里可能会接近 100%）**
+- O：**old 区使用比例（百分比）（异常的时候，这里可能会接近 100%）**
+- M：**Metaspace 区使用比例（百分比）（异常的时候，这里可能会接近 100%）**
+- CCS：压缩使用比例
+- YGC：年轻代垃圾回收次数
+- FGC：老年代垃圾回收次数
+- FGCT：老年代垃圾回收消耗时间（单位秒）
+- GCT：垃圾回收消耗总时间（单位秒）
+- **异常的时候每次 Full GC 时间也可能非常长，每次时间计算公式=FGCT值/FGC指）**
+- `jmap -heap PID`，查看具体占用量是多大
+- 使用 `jmap -dump:format=b,file=/opt/dumpfile-tomcat1-PID-20180917.hprof PID`，生成堆转储文件（如果设置的 heap 过大，dump 下来会也会非常大）
+	- 使用 jhat 或者可视化工具（Eclipse Memory Analyzer 、IBM HeapAnalyzer）分析堆情况。
+	- 一般这时候就只能根据 jhat 的分析，看源码了
+- 这里有几篇类似经历的文章推荐给大家：
+	- [三个神奇bug之Java占满CPU](http://luofei.me/?p=197)
+	- [CPU 负载过高问题排查](http://zhouyun.me/2017/10/24/cpu_load_issue/)
+
+
+#### CPU 低，负载高，访问慢（带数据库）
+
+- 基于上面，但是侧重点在于 I/O 读写，以及是否有 MySQL 死锁，或者挂载了 NFS，而 NFS Server 出现问题
+- mysql 下查看当前的连接数与执行的sql 语句：`show full processlist;`
+- 检查慢查询日志，可能是慢查询引起负载高，根据配置文件查看存放位置：`log_slow_queries`
+- 查看 MySQL 设置的最大连接数：`show variables like 'max_connections';`
+	- 重新设置最大连接数：`set GLOBAL max_connections=300`
+
+
+
+
 ## 参考资料
 
 - <http://man.linuxde.net/dd>
@@ -521,33 +923,10 @@ Address: 180.97.33.107
 - <http://coolnull.com/3649.html>
 - <http://www.rfyy.net/archives/2456.html>
 - <http://programmerfamily.com/blog/linux/sav.html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+- <https://www.jianshu.com/p/3991c0dba094>
+- <https://www.jianshu.com/p/3667157d63bb>
+- <https://www.cnblogs.com/yjd_hycf_space/p/7755633.html>
+- <http://silverd.cn/2016/05/27/nginx-access-log.html>
 
 
 

@@ -72,6 +72,7 @@ Docker CE has both stable and edge channels.
     - `sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo`
     - `sudo yum makecache fast`
     - `sudo yum install -y docker-ce`，大小：19M，速度很慢。
+- 查看配置文件位置：`systemctl show --property=FragmentPath docker`
 - 启动 Docker：`systemctl start docker.service`
 - 停止 Docker：`systemctl stop docker.service`
 - 查看状态：`systemctl status docker.service`
@@ -198,7 +199,7 @@ java -jar /root/spring-boot-my-demo.jar
 	- 我们看到了我们刚刚运行的容器 ID（CONTAINER ID）为：`a5d544d9b6f9`，这个下面要用到
 - 基于刚刚运行的容器创建新镜像：`docker commit a5d544d9b6f9 youmeek/springboot:0.1`
 	- 查看现在的镜像库：`docker images`，会发现多了一个 youmeek/springboot 新镜像，镜像 ID 为：`7024f230fef9`
-- 运行新镜像，实例化为一个容器，并启动容器中刚刚写的脚本：`docker run -d -p 38080:8080 --name springBootJar 7024f230fef9 /root/spring-boot-run.sh`
+- 运行新镜像，实例化为一个容器，并启动容器中刚刚写的脚本：`docker run -d -p 38080:8080 --name=springBootJar --hostname=springBootJar 7024f230fef9 /root/spring-boot-run.sh`
     - `-d`：表示以“守护模式”执行 spring-boot-run.sh 脚本，此时 jar 中的 log 日志不会出现在输出终端上。  
     - `-p`：表示宿主机与容器的端口映射，此时将容器内部的 8080 端口映射为宿主机的 38080 端口，这样就向外界暴露了 38080 端口，可通过 Docker 网桥来访问容器内部的 8080 端口了。  
     - `--name`：表示给新实例容器取的名称，用一个有意义的名称命名即可
@@ -253,6 +254,7 @@ CONTAINER ID        NAME                      CPU %               MEM USAGE / LI
     - `docker rmi 仓库:Tag`：删除具体某一个镜像
     - `docker rmi $(docker images -q)`，删除所有镜像
     - `docker rmi -f $(docker images -q)`，强制删除所有镜像
+    - `docker rmi $(docker images | grep "vmware" | awk '{print $3}')`，批量删除带有 vmware 名称的镜像
 - `docker tag`：为镜像打上标签
 	- `docker tag -f ubuntu:14.04 ubuntu:latest`，-f 意思是强制覆盖
 	- 同一个IMAGE ID可能会有多个TAG（可能还在不同的仓库），首先你要根据这些 image names 来删除标签，当删除最后一个tag的时候就会自动删除镜像；
@@ -270,13 +272,13 @@ CONTAINER ID        NAME                      CPU %               MEM USAGE / LI
 #### 容器生命周期管理
  
 - `docker run`，运行镜像
-    - `docker run -v /java_logs/:/opt/ -d -p 8080:80 --name myDockerNameIsGitNavi -i -t 镜像ID /bin/bash`
+    - `docker run -v /java_logs/:/opt/ -d -p 8080:80 --name=myDockerNameIsGitNavi --hostname=myDockerNameIsGitNavi -i -t 镜像ID /bin/bash`
         - `-i -t` 分别表示保证容器中的 STDIN 开启，并分配一个伪 tty 终端进行交互，这两个是合着用。
         - `--name` 是给容器起了一个名字（如果没有主动给名字，docker 会自动给你生成一个）容器的名称规则：大小写字母、数字、下划线、圆点、中横线，用正则表达式来表达就是：[a-zA-Z0-9_*-]
         - `-d` 容器运行在后台。
         - `-p 8080:80` 表示端口映射，将宿主机的8080端口转发到容器内的80端口。（如果是 -P 参数，则表示随机映射应该端口，一般用在测试的时候）
         - `-v /java_logs/:/opt/` 表示目录挂载，/java_logs/ 是宿主机的目录，/opt/ 是容器目录
-    - `docker run --rm --name myDockerNameIsGitNavi -i -t centos /bin/bash`，--rm，表示退出即删除容器，一般用在做实验测试的时候
+    - `docker run --rm --name=myDockerNameIsGitNavi --hostname=myDockerNameIsGitNavi -i -t centos /bin/bash`，--rm，表示退出即删除容器，一般用在做实验测试的时候
     - `docker run --restart=always -i -t centos /bin/bash`，--restart=always 表示停止后会自动重启
     - `docker run --restart=on-failure:5 -i -t centos /bin/bash`，--restart=on-failure:5 表示停止后会自动重启，最多重启 5 次
 - `docker exec`：对守护式的容器里面执行命令，方便对正在运行的容器进行维护、监控、管理
@@ -284,6 +286,7 @@ CONTAINER ID        NAME                      CPU %               MEM USAGE / LI
     - `docker exec -d 容器ID touch /opt/test.txt`，已守护式的方式进入 docker 容器，并创建一个文件
 - `docker stop 容器ID`，停止容器
     - `docker stop $(docker ps -a -q)`，停止所有容器
+    - `docker stop $(docker ps -a -q) ; docker rm $(docker ps -a -q)`，停止所有容器，并删除所有容器
     - `docker kill $(docker ps -q) ; docker rm $(docker ps -a -q)`，停止所有容器，并删除所有容器
 - `docker start 容器ID`，重新启动已经停止的容器（重新启动，docker run 参数还是保留之前的）
 - `docker restart 容器ID`，重启容器
@@ -645,6 +648,21 @@ docker rmi $(docker images -f "dangling=true" -q)
 - <https://docs.docker.com/engine/reference/commandline/dockerd/>
 
 
+## Docker remote api 远程操作配置（保证在内网环境）
+
+- 假设要被远程操作的服务器 IP：`192.168.1.22`
+- 修改其配置文件：`vim /lib/systemd/system/docker.service`
+- 修改默认值为：`ExecStart=/usr/bin/dockerd`
+- 改为：`ExecStart=/usr/bin/dockerd -H unix:///var/run/docker.sock -H tcp://0.0.0.0:2376`
+	- 如果还需要连自己的 harbor 这类，完整配置：`ExecStart=/usr/bin/dockerd --insecure-registry harbor.youmeek.com -H unix:///var/run/docker.sock -H tcp://0.0.0.0:2376`
+- `systemctl daemon-reload`
+- `systemctl reload docker`
+- `systemctl restart docker`
+- 验证：
+	- 在其他服务器上运行：`docker -H 192.168.1.22:2376 images `
+	- 能拿到和它本身看到的一样的数据表示可以了
+
+
 ## Dockerfile 解释
 
 - 该文件名就叫 Dockerfile，注意大小写，没有后缀，否则会报错。
@@ -703,7 +721,7 @@ EXPOSE 9096
 	- `cd /opt/zch`
 	- `docker build . --tag="skb/user:v1.0.1"`
 		- 因为 build 过程中会有多层镜像 step 过程，所以如果 build 过程中失败，那解决办法的思路是找到 step 失败的上一层，成功的 step 中镜像 ID。然后 docker run 该镜像 ID，手工操作，看报什么错误，然后就比较清晰得了解错误情况了。
-	- `docker run -d -p 9096:9096 -v /usr/local/logs/:/opt/ --name="skbUser1.0.0" skb/user:v1.0.1`
+	- `docker run -d -p 9096:9096 -v /usr/local/logs/:/opt/ --name=skbUser --hostname=skbUser skb/user:v1.0.1`
 	- 查看启动后容器列表：`docker ps`
 	- jar 应用的日志是输出在容器的 /opt 目录下，因为我们上面用了挂载，所在在我们宿主机的 /usr/local/logs 目录下可以看到输出的日志
 - 防火墙开放端口：
@@ -717,6 +735,39 @@ ENV TZ=Asia/Shanghai
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 ```
 
+## Dockerfile 部署 Tomcat 应用
+
+- 编写 Dockerfile
+
+```
+FROM tomcat:8.0.46-jre8
+MAINTAINER GitNavi <gitnavi@qq.com>
+
+ENV JAVA_OPTS="-Xms2g -Xmx2g -XX:MetaspaceSize=128M -XX:MaxMetaspaceSize=312M"
+ENV CATALINA_HOME /usr/local/tomcat
+
+ENV TZ=Asia/Shanghai
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+RUN rm -rf /usr/local/tomcat/webapps/*
+
+ADD qiyeweixin.war /usr/local/tomcat/webapps/
+
+EXPOSE 8080
+
+CMD ["catalina.sh", "run"]
+```
+
+- 打包镜像：`docker build -t harbor.gitnavi.com/demo/qiyeweixin:1.2.2 ./`
+- 运行：`docker run -d -p 8888:8080 --name=qiyeweixin --hostname=qiyeweixin -v /data/docker/logs/qiyeweixin:/data/logs/qiyeweixin harbor.gitnavi.com/demo/qiyeweixin:1.2.2`
+- 带 JVM 参数运行：`docker run -d -p 8888:8080 -e JAVA_OPTS='-Xms7g -Xmx7g -XX:MetaspaceSize=128M -XX:MaxMetaspaceSize=512M' --name=qiyeweixin --hostname=qiyeweixin -v /data/docker/logs/qiyeweixin:/data/logs/qiyeweixin harbor.gitnavi.com/demo/qiyeweixin:1.2.2`
+	- 虽然 Dockerfile 已经有 JVM 参数，并且也是有效的。但是如果 docker run 的时候又带了 JVM 参数，则会以 docker run 的参数为准
+- 测试 JVM 是否有效方法，在代码里面书写，该值要接近 xmx 值：
+
+```
+long maxMemory = Runtime.getRuntime().maxMemory();
+logger.warn("-------------maxMemory=" + ((double) maxMemory / (1024 * 1024)));
+```
 
 ## Docker Compose
 

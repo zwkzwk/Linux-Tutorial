@@ -5,7 +5,7 @@
 
 - 关掉：SELinux
 - 创建本地数据存储 + 配置文件目录：`mkdir -p /data/docker/mysql/datadir /data/docker/mysql/conf /data/docker/mysql/log`
-- 在宿主机上创建一个配置文件：`vim /data/docker/mysql/conf/mycat-mysql-1.cnf`，内容如下：
+- 在宿主机上创建一个配置文件：`vim /data/docker/mysql/conf/mysql-1.cnf`，内容如下：
 
 ```
 # 该编码设置是我自己配置的
@@ -36,10 +36,12 @@ max_allowed_packet = 50M
 
 - 赋权（避免挂载的时候，一些程序需要容器中的用户的特定权限使用）：`chmod -R 777 /data/docker/mysql/datadir /data/docker/mysql/log`
 - 赋权：`chown -R 0:0 /data/docker/mysql/conf`
-	- 配置文件的赋权比较特殊，如果是给 777 权限会报：[Warning] World-writable config file '/etc/mysql/conf.d/mycat-mysql-1.cnf' is ignored，所以这里要特殊对待。容器内是用 root 的 uid，所以这里与之相匹配赋权即可。
+	- 配置文件的赋权比较特殊，如果是给 777 权限会报：[Warning] World-writable config file '/etc/mysql/conf.d/mysql-1.cnf' is ignored，所以这里要特殊对待。容器内是用 root 的 uid，所以这里与之相匹配赋权即可。
 	- 我是进入容器 bash 内，输入：`whoami && id`，看到默认用户的 uid 是 0，所以这里才 chown 0
-- `docker run -p 3306:3306 --name cloud-mysql -v /data/docker/mysql/datadir:/var/lib/mysql -v /data/docker/mysql/log:/var/log/mysql -v /data/docker/mysql/conf:/etc/mysql/conf.d -e MYSQL_ROOT_PASSWORD=adg123456 -d mysql:5.7`
-- 连上容器：`docker exec -it 09747cd7d0bd /bin/bash`
+- `docker run -p 3306:3306 --name cloud-mysql -v /data/docker/mysql/datadir:/var/lib/mysql -v /data/docker/mysql/log:/var/log/mysql -v /data/docker/mysql/conf:/etc/mysql/conf.d -e MYSQL_ROOT_PASSWORD=123456 -d mysql:5.7`
+- 连上容器：`docker exec -it cloud-mysql /bin/bash`
+	- 连上 MySQL：`mysql -u root -p`
+	- 创建表：`CREATE DATABASE wormhole DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`
 - 关于容器的 MySQL 配置，官网是这样说的：<https://hub.docker.com/_/mysql/>
 
 >> The MySQL startup configuration is specified in the file /etc/mysql/my.cnf, and that file in turn includes any files found in the /etc/mysql/conf.d directory that end with .cnf.Settings in files in this directory will augment and/or override settings in /etc/mysql/my.cnf. If you want to use a customized MySQL configuration,you can create your alternative configuration file in a directory on the host machine and then mount that directory location as /etc/mysql/conf.d inside the mysql container.
@@ -70,8 +72,31 @@ max_allowed_packet = 50M
 	- 备份：`docker exec cloud-mysql /usr/bin/mysqldump -u root --password=123456 DATABASE_Name > /opt/backup.sql`
 	- 还原：`docker exec -i cloud-mysql /usr/bin/mysql -u root --password=123456 DATABASE_Name < /opt/backup.sql`
 
+-------------------------------------------------------------------
 
-## MySQL 安装
+
+## MySQL 5.5 安装
+
+- [来源](https://blog.csdn.net/qingtian_1993/article/details/79692479)
+- 设置仓库
+
+```
+rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm
+rpm -Uvh https://mirror.webtatic.com/yum/el6/latest.rpm
+```
+
+- 安装：`yum install mysql55w mysql55w-server`，用同时生产 mysql 的组和用户
+- 启动：`service mysqld start`
+- 重置密码：`mysqladmin -u root password '123456'`
+- 默认配置文件：`vim /etc/my.cnf`
+- log 目录：`cd /var/log/mysqld.log`
+- 查看服务 log：`tail -300 /var/log/mysqld.log`
+- 给指定目录增加 mysql 用户组权限：`chown mysql.mysql /var/run/mysqld/`
+- 官网 MySQL 启动失败，这篇文章经验值得推荐：[CentOS 7下MySQL服务启动失败的解决思路](https://www.cnblogs.com/ivictor/p/5146247.html)
+
+-------------------------------------------------------------------
+
+## MySQL 5.6 安装
 
 - 假设当前用户为：root
 - Mysql 安装
@@ -91,25 +116,25 @@ max_allowed_packet = 50M
     - 我们这次安装以 5.6 为实例
         - 进入下载目录：`cd /opt/setups`
         - 解压压缩包：`tar zxvf mysql-5.6.35.tar.gz`
-        - 移到解压包：`mv /opt/setups/mysql-5.6.35 /usr/program/`
+        - 移到解压包：`mv /opt/setups/mysql-5.6.35 /usr/local/`
         - 安装依赖包、编译包：`yum install -y make gcc-c++ cmake bison-devel ncurses-devel autoconf`
-        - 进入解压目录：`cd /usr/program/mysql-5.6.35/`
-        - 生成安装目录：`mkdir -p /usr/program/mysql/data`
-        - 生成配置（使用 InnoDB）：`cmake -DCMAKE_INSTALL_PREFIX=/usr/program/mysql -DMYSQL_DATADIR=/usr/program/mysql/data -DMYSQL_UNIX_ADDR=/tmp/mysql.sock -DDEFAULT_CHARSET=utf8mb4 -DDEFAULT_COLLATION=utf8mb4_unicode_ci -DWITH_EXTRA_CHARSETS:STRING=utf8mb4 -DWITH_MYISAM_STORAGE_ENGINE=1 -DWITH_INNOBASE_STORAGE_ENGINE=1 -DENABLED_LOCAL_INFILE=1`
+        - 进入解压目录：`cd /usr/local/mysql-5.6.35/`
+        - 生成安装目录：`mkdir -p /usr/local/mysql/data`
+        - 生成配置（使用 InnoDB）：`cmake -DCMAKE_INSTALL_PREFIX=/usr/local/mysql -DMYSQL_DATADIR=/usr/local/mysql/data -DMYSQL_UNIX_ADDR=/tmp/mysql.sock -DDEFAULT_CHARSET=utf8mb4 -DDEFAULT_COLLATION=utf8mb4_unicode_ci -DWITH_EXTRA_CHARSETS:STRING=utf8mb4 -DWITH_MYISAM_STORAGE_ENGINE=1 -DWITH_INNOBASE_STORAGE_ENGINE=1 -DENABLED_LOCAL_INFILE=1`
             - 更多参数说明可以查看：<http://dev.mysql.com/doc/refman/5.6/en/source-configuration-options.html>
         - 编译：`make`，这个过程比较漫长，一般都在 30 分钟左右，具体还得看机子配置，如果最后结果有 error，建议删除整个 mysql 目录后重新解压一个出来继续处理
         - 安装：`make install`
         - 配置开机启动：
-            - `cp /usr/program/mysql-5.6.35/support-files/mysql.server  /etc/init.d/mysql`
+            - `cp /usr/local/mysql-5.6.35/support-files/mysql.server  /etc/init.d/mysql`
             - `chmod 755 /etc/init.d/mysql`
             - `chkconfig mysql on`
-        - 复制一份配置文件： `cp /usr/program/mysql-5.6.35/support-files/my-default.cnf /etc/my.cnf`
-        - 删除安装的目录：`rm -rf /usr/program/mysql-5.6.35/`
+        - 复制一份配置文件： `cp /usr/local/mysql-5.6.35/support-files/my-default.cnf /etc/my.cnf`
+        - 删除安装的目录：`rm -rf /usr/local/mysql-5.6.35/`
         - 添加组和用户及安装目录权限
             - `groupadd mysql` #添加组
             - `useradd -g mysql mysql -s /bin/false` #创建用户mysql并加入到mysql组，不允许mysql用户直接登录系统
-            - `chown -R mysql:mysql /usr/program/mysql/data` #设置MySQL数据库目录权限
-        - 初始化数据库：`/usr/program/mysql/scripts/mysql_install_db --basedir=/usr/program/mysql --datadir=/usr/program/mysql/data --skip-name-resolve --user=mysql`
+            - `chown -R mysql:mysql /usr/local/mysql/data` #设置MySQL数据库目录权限
+        - 初始化数据库：`/usr/local/mysql/scripts/mysql_install_db --basedir=/usr/local/mysql --datadir=/usr/local/mysql/data --skip-name-resolve --user=mysql`
 		- 开放防火墙端口：
 			- `iptables -I INPUT -p tcp -m tcp --dport 3306 -j ACCEPT`
 			- `service iptables save`
@@ -118,10 +143,12 @@ max_allowed_packet = 50M
 			- 编辑配置文件：`vim /etc/selinux/config`
 			- 把 `SELINUX=enforcing` 改为 `SELINUX=disabled`
         - 常用命令软连接，才可以在终端直接使用：mysql 和 mysqladmin 命令
-            - `ln -s /usr/program/mysql/bin/mysql /usr/bin`
-            - `ln -s /usr/program/mysql/bin/mysqladmin /usr/bin`
-            - `ln -s /usr/program/mysql/bin/mysqldump /usr/bin`
-            - `ln -s /usr/program/mysql/bin/mysqlslap /usr/bin`
+            - `ln -s /usr/local/mysql/bin/mysql /usr/bin`
+            - `ln -s /usr/local/mysql/bin/mysqladmin /usr/bin`
+            - `ln -s /usr/local/mysql/bin/mysqldump /usr/bin`
+            - `ln -s /usr/local/mysql/bin/mysqlslap /usr/bin`
+
+-------------------------------------------------------------------
 
 
 ## MySQL 配置
@@ -131,15 +158,15 @@ max_allowed_packet = 50M
 
 ``` nginx
 /etc/my.cnf
-/usr/program/mysql/my.cnf
-/usr/program/mysql/mysql-test/suite/ndb/my.cnf
-/usr/program/mysql/mysql-test/suite/ndb_big/my.cnf
+/usr/local/mysql/my.cnf
+/usr/local/mysql/mysql-test/suite/ndb/my.cnf
+/usr/local/mysql/mysql-test/suite/ndb_big/my.cnf
 .............
-/usr/program/mysql/mysql-test/suite/ndb_rpl/my.cnf
+/usr/local/mysql/mysql-test/suite/ndb_rpl/my.cnf
 ```
 
 
-- 保留 **/etc/my.cnf** 和 **/usr/program/mysql/mysql-test/** 目录下配置文件，其他删除掉。
+- 保留 **/etc/my.cnf** 和 **/usr/local/mysql/mysql-test/** 目录下配置文件，其他删除掉。
 - 我整理的一个单机版配置说明（MySQL 5.6，适用于 1G 内存的服务器）：
 	- [my.cnf](MySQL-Settings/MySQL-5.6/1G-Memory-Machine/my-for-comprehensive.cnf)
 - 其中我测试的结果，在不适用任何配置修改的情况下，1G 内存安装 MySQL 5.6 默认就会占用 400M 左右的内存，要降下来的核心配置要补上这几个参数：
@@ -165,9 +192,9 @@ table_open_cache=256
 	- 解决办法：
 	- 在终端中执行（CentOS 6）：`service mysql stop`
 	- 在终端中执行（CentOS 7）：`systemctl stop mysql`
-	- 在终端中执行（前面添加的 Linux 用户 mysql 必须有存在）：`/usr/program/mysql/bin/mysqld --skip-grant-tables --user=mysql`
+	- 在终端中执行（前面添加的 Linux 用户 mysql 必须有存在）：`/usr/local/mysql/bin/mysqld --skip-grant-tables --user=mysql`
 		- 此时 MySQL 服务会一直处于监听状态，你需要另起一个终端窗口来执行接下来的操作
-		- 在终端中执行：`mysql -u root mysql`
+		- 在终端中执行：`mysql -u root mysql` 或者：`mysql -h 127.0.0.1 -u root -P 3306 -p`
 		- 把密码改为：123456，进入 MySQL 命令后执行：`UPDATE user SET Password=PASSWORD('123456') where USER='root';FLUSH PRIVILEGES;`
 		- 然后重启 MySQL 服务（CentOS 6）：`service mysql restart`
 		- 然后重启 MySQL 服务（CentOS 7）：`systemctl restart mysql`
@@ -195,6 +222,24 @@ set global validate_password_length=6; #密码允许最小长度为6
 set password = password('新密码');
 FLUSH PRIVILEGES;
 ```
+
+## MySQL 5.7 
+
+- 报错内容：
+
+```
+Expression #1 of ORDER BY clause is not in GROUP BY clause and contains nonaggregated column 'youmeek.nm.id' 
+which is not functionally dependent on columns in GROUP BY clause; 
+this is incompatible with sql_mode=only_full_group_by
+```
+
+- 查下自己的模式：`select version(), @@sql_mode;`
+- 解决办法，修改 my.cnf，增加这一行：
+
+```
+sql_mode=STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION;
+```
+
 
 ## 小内存机子，MySQL 频繁挂掉解决办法（1G + CentOS 7.4）
 
@@ -250,9 +295,9 @@ swapon /swapfile
 ### 主库机子操作
 
 - 主库操作步骤
-	- 创建一个目录：`mkdir -p /usr/program/mysql/data/mysql-bin`
+	- 创建一个目录：`mkdir -p /usr/local/mysql/data/mysql-bin`
 	- 主 DB 开启二进制日志功能：`vim /etc/my.cnf`，
-		- 添加一行：`log-bin = /usr/program/mysql/data/mysql-bin`
+		- 添加一行：`log-bin = /usr/local/mysql/data/mysql-bin`
         - 指定同步的数据库，如果不指定则同步全部数据库，其中 ssm 是我的数据库名：`binlog-do-db=ssm`
     - 主库关掉慢查询记录，用 SQL 语句查看当前是否开启：`SHOW VARIABLES LIKE '%slow_query_log%';`，如果显示 OFF 则表示关闭，ON 表示开启
     - 重启主库 MySQL 服务
@@ -296,8 +341,8 @@ swapon /swapfile
     - `Slave_IO_Running:Yes`
         - 如果不是 Yes 也不是 No，而是 Connecting，那就表示从机连不上主库，需要你进一步排查连接问题。
     - `Slave_SQL_Running:Yes`
-- 如果你的 Slave_IO_Running 是 No，一般如果你是在虚拟机上测试的话，从库的虚拟机是从主库的虚拟机上复制过来的，那一般都会这样的，因为两台的 MySQL 的 UUID 值一样。你可以检查从库下的错误日志：`cat /usr/program/mysql/data/mysql-error.log`
-    - 如果里面提示 uuid 错误，你可以编辑从库的这个配置文件：`vim /usr/program/mysql/data/auto.cnf`，把配置文件中的：server-uuid 值随便改一下，保证和主库是不一样即可。
+- 如果你的 Slave_IO_Running 是 No，一般如果你是在虚拟机上测试的话，从库的虚拟机是从主库的虚拟机上复制过来的，那一般都会这样的，因为两台的 MySQL 的 UUID 值一样。你可以检查从库下的错误日志：`cat /usr/local/mysql/data/mysql-error.log`
+    - 如果里面提示 uuid 错误，你可以编辑从库的这个配置文件：`vim /usr/local/mysql/data/auto.cnf`，把配置文件中的：server-uuid 值随便改一下，保证和主库是不一样即可。
 
 
 

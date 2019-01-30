@@ -49,8 +49,7 @@ python setup.py  install
 ```
 
 
-- 生成配置文件：
-	- `echo_supervisord_conf > /etc/supervisord.conf`
+- 生成配置文件：`echo_supervisord_conf > /etc/supervisord.conf`
 - 创建专门的程序配置文件目录、日志目录：
 	- `mkdir -p /var/log/supervisor`
 	- `mkdir -p /etc/supervisor/conf.d/`
@@ -74,17 +73,22 @@ stdout_logfile=/var/log/supervisor/supervisord-logstash.log
 stderr_logfile=/var/log/supervisor/supervisord-logstash-err.log
 user=root
 autostart=true
-autorestart=true
+autorestart=false
 startsecs=5
 priority=1
 stopasgroup=true
 killasgroup=true
 ```
 
+- 该配置的具体说明可以参考：[使用 supervisor 管理进程](http://liyangliang.me/posts/2015/06/using-supervisor/)
 - 启动程序（默认会启动所有子任务）：`/usr/bin/supervisord -c /etc/supervisord.conf`
 - 管理子任务的命令：
+	- 子任务状态：`/usr/bin/supervisorctl status`
 	- 启动所有子任务：`/usr/bin/supervisorctl start all`
 	- 结束所有子任务：`/usr/bin/supervisorctl stop all`
+	- 启动指定子任务：`/usr/bin/supervisorctl start gitnavi-logstash`
+	- 结束指定子任务：`/usr/bin/supervisorctl stop gitnavi-logstash`
+	- 重启指定子任务：`/usr/bin/supervisorctl restart gitnavi-logstash`
 	- 只载入最新的配置文件, 并不重启任何进程：`/usr/bin/supervisorctl reread`
 	- 载入最新的配置文件，停止原来的所有进程并按新的配置启动管理所有进程：`/usr/bin/supervisorctl reload`
 	- 根据最新的配置文件，启动新配置或有改动的进程，配置没有改动的进程不会受影响而重启：`/usr/bin/supervisorctl update`

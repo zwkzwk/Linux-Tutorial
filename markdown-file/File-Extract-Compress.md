@@ -40,7 +40,8 @@
 ## 常用文件进行--压缩--命令整理
 
 - Linux 压缩文件夹为后缀 `.war` 格式的文件（最好不要对根目录进行压缩，不然会多出一级目录）
-- 命令：`jar -cvfM0 cas.war /opt/cas/META-INF /opt/cas/WEB-INF`
+- 命令：`jar -cvfM0 cas.war /opt/cas/META-INF /opt/cas/WEB-INF /opt/cas/index.jsp`
+- 或者命令：`cd 项目根目录 ; jar -cvfM0 cas.war ./*`
 
 - Linux 压缩文件为后缀 `.tar` 格式的文件
 - 命令：`tar -zcvf test11.tar test11`
@@ -59,6 +60,20 @@
 
 - Linux 压缩文件为后缀 `.7z` 格式的文件
 - 命令：`7za a test1.7z /opt/test1/`
+
+
+## 分卷压缩
+
+- 分卷压缩：`zip -s 100M myFile.zip --out newFile.zip`
+- 最终效果：
+
+```
+newFile.z01
+newFile.z02
+newFile.z03
+newFile.z04
+newFile.zip
+```
 
 
 ## 特殊格式

@@ -22,9 +22,16 @@
 - Redis 默认的配置文件内容：
 
 ``` ini
-bind 0.0.0.0
+安全情况的几个特殊配置：
+bind 127.0.0.1
 requirepass adgredis123456
 protected-mode yes
+
+免密情况：
+bind 0.0.0.0
+protected-mode no
+
+其他：
 port 6379
 tcp-backlog 511
 timeout 0
@@ -88,6 +95,8 @@ aof-rewrite-incremental-fsync yes
 #### Redis 容器准备
 
 - 目标：3 主 3 从（一般都是推荐奇数个 master）
+- 最小集群数推荐是：3
+- 测试机的最低配置推荐是：2C4G
 - 拉取镜像：`docker pull registry.cn-shenzhen.aliyuncs.com/youmeek/redis-to-cluster:3.2.3`
 - 重新打个 tag（旧名字太长了）：`docker tag registry.cn-shenzhen.aliyuncs.com/youmeek/redis-to-cluster:3.2.3 redis-to-cluster:3.2.3`
 - 创建网段：`docker network create --subnet=172.19.0.0/16 net-redis-to-cluster`
@@ -246,17 +255,14 @@ M: 5d0fe968559af3035d8d64ab598f2841e5f3a059 172.19.0.7:6379
     - 官网 Github 地址：<https://github.com/redis>
     - 此时（20160212） Redis 最新稳定版本为：**3.0.7**
     - 官网帮助中心：<http://redis.io/documentation>
-    - 我个人习惯 `/opt` 目录下创建一个目录 `setups` 用来存放各种软件安装包；在 `/usr` 目录下创建一个 `program` 用来存放各种解压后的软件包，下面的讲解也都是基于此习惯
-    - 我个人已经使用了第三方源：`EPEL、RepoForge`，如果你出现 `yum install XXXXX` 安装不成功的话，很有可能就是你没有相关源，请查看我对源设置的文章
-    - Redis 下载：`wget http://download.redis.io/releases/redis-3.0.7.tar.gz` （大小：1.4 M）
+    - Redis 下载（/usr/local）：`wget http://download.redis.io/releases/redis-3.0.7.tar.gz` （大小：1.4 M）
         - 安装依赖包：`yum install -y gcc-c++ tcl`
         - 解压：`tar zxvf redis-3.0.7.tar.gz`
-        - 移动到我个人安装目录：`mv redis-3.0.7/ /usr/program/`
-        - 进入解压后目录：`cd /usr/program/redis-3.0.7/`
+        - 进入解压后目录：`cd /usr/local/redis-3.0.7/`
         - 编译：`make`
         - 编译安装：`make install`
             - 安装完之后会在：`/usr/local/bin` 目录下生成好几个 redis 相关的文件
-        - 复制配置文件：`cp /usr/program/redis-3.0.7/redis.conf /etc/`
+        - 复制配置文件：`cp /usr/local/redis-3.0.7/redis.conf /etc/`
         - 修改配置：`vim /etc/redis.conf`
             - 把旧值：`daemonize no` 
             - 改为新值：`daemonize yes` 
@@ -608,6 +614,88 @@ esac
 - 使用 `.msi` 后缀的文件进行安装，此安装包自带安装 Windows 服务
 - 配置文件也跟原版本不一样，叫做：`redis.windows.conf`
 
+
+## Redis Info
+
+- 客户端下命令行：`info`
+	- 参考：<http://redisdoc.com/server/info.html>
+
+```
+server 部分记录了 Redis 服务器的信息，它包含以下域：
+
+redis_version : Redis 服务器版本
+redis_git_sha1 : Git SHA1
+redis_git_dirty : Git dirty flag
+os : Redis 服务器的宿主操作系统
+arch_bits : 架构（32 或 64 位）
+multiplexing_api : Redis 所使用的事件处理机制
+gcc_version : 编译 Redis 时所使用的 GCC 版本
+process_id : 服务器进程的 PID
+run_id : Redis 服务器的随机标识符（用于 Sentinel 和集群）
+tcp_port : TCP/IP 监听端口
+uptime_in_seconds : 自 Redis 服务器启动以来，经过的秒数
+uptime_in_days : 自 Redis 服务器启动以来，经过的天数
+lru_clock : 以分钟为单位进行自增的时钟，用于 LRU 管理
+clients 部分记录了已连接客户端的信息，它包含以下域：
+
+connected_clients : 已连接客户端的数量（不包括通过从属服务器连接的客户端）
+client_longest_output_list : 当前连接的客户端当中，最长的输出列表
+client_longest_input_buf : 当前连接的客户端当中，最大输入缓存
+blocked_clients : 正在等待阻塞命令（BLPOP、BRPOP、BRPOPLPUSH）的客户端的数量
+memory 部分记录了服务器的内存信息，它包含以下域：
+
+used_memory : 由 Redis 分配器分配的内存总量，以字节（byte）为单位
+used_memory_human : 以人类可读的格式返回 Redis 分配的内存总量
+used_memory_rss : 从操作系统的角度，返回 Redis 已分配的内存总量（俗称常驻集大小）。这个值和 top 、 ps 等命令的输出一致。
+used_memory_peak : Redis 的内存消耗峰值（以字节为单位）
+used_memory_peak_human : 以人类可读的格式返回 Redis 的内存消耗峰值
+used_memory_lua : Lua 引擎所使用的内存大小（以字节为单位）
+mem_fragmentation_ratio : used_memory_rss 和 used_memory 之间的比率
+mem_allocator : 在编译时指定的， Redis 所使用的内存分配器。可以是 libc 、 jemalloc 或者 tcmalloc 。
+```
+
+- 常关注信息：
+
+```
+used_memory_rss_human：系统给redis分配的内存（即常驻内存）
+used_memory_peak_human : Redis 的内存消耗峰值
+used_memory_lua_human : 系统内存大小
+expired_keys : 过期的的键数量
+evicted_keys : 因为最大内存容量限制而被驱逐（evict）的键数量
+used_cpu_sys_children : Redis 后台进程在 内核态 消耗的 CPU
+used_cpu_user_children : Redis 后台进程在 用户态 消耗的 CPU
+```
+
+## Redis 基准压力测试
+
+- 默认安装包下就自带
+- 官网文档：<https://redis.io/topics/benchmarks>
+- 运行：`redis-benchmark -q -n 100000`
+	- `-q` 表示 quiet 安静执行，结束后直接输出结果即可
+	- `-n 100000` 请求 10 万次
+
+```
+PING_INLINE: 62189.05 requests per second
+PING_BULK: 68634.18 requests per second
+SET: 58241.12 requests per second
+GET: 65445.03 requests per second
+INCR: 57703.40 requests per second
+LPUSH: 61199.51 requests per second
+RPUSH: 68119.89 requests per second
+LPOP: 58309.04 requests per second
+RPOP: 63775.51 requests per second
+SADD: 58479.53 requests per second
+HSET: 61500.61 requests per second
+SPOP: 58241.12 requests per second
+LPUSH (needed to benchmark LRANGE): 59523.81 requests per second
+LRANGE_100 (first 100 elements): 60350.03 requests per second
+LRANGE_300 (first 300 elements): 57636.89 requests per second
+LRANGE_500 (first 450 elements): 63251.11 requests per second
+LRANGE_600 (first 600 elements): 58479.53 requests per second
+MSET (10 keys): 56401.58 requests per second
+```
+
+- 只测试特定类型：`redis-benchmark -t set,lpush -n 100000 -q`
 
 
 ## 资料
