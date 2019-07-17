@@ -1,31 +1,86 @@
 # Elasticsearch 知识
 
-## Docker 部署
+## Docker 单节点部署
+
+- 官网：<https://hub.docker.com/_/elasticsearch>
+- 官网列表：<https://www.docker.elastic.co/>
+- 阿里云支持版本：<https://data.aliyun.com/product/elasticsearch>
+    - 7.x：7.1.0
+    - 6.x：6.8.0
+    - 5.x：5.6.8
+- 注意：docker 版本下 client.transport.sniff = true 是无效的。
+
+#### 5.6.x
+
+- `vim ~/elasticsearch-5.6.8-docker.yml`
+- 启动：`docker-compose -f ~/elasticsearch-5.6.8-docker.yml -p elasticsearch_5.6.8 up -d`
 
 ```
-version: "3"
-
+version: '3'
 services:
-  elasticsearch:
-    image: elasticsearch:5.6.8
-    restart: always
-    container_name: elasticsearch
-    hostname: elasticsearch
+  elasticsearch1:
+    image: docker.elastic.co/elasticsearch/elasticsearch:5.6.8
+    container_name: elasticsearch-5.6.8
     environment:
-      - 'http.host=0.0.0.0'
-      - 'transport.host=127.0.0.1'
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "cluster.name=elasticsearch"
+      - "network.host=0.0.0.0"
+      - "http.host=0.0.0.0"
+      - "xpack.security.enabled=false"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
     ports:
-      - "9200:9200"
-      - "9300:9300"
+      - 9200:9200
+      - 9300:9300
     volumes:
       - /data/docker/elasticsearch/data:/usr/share/elasticsearch/data
+
 ```
+
+
+#### 6.7.x
+
+- `vim ~/elasticsearch-6.7.2-docker.yml`
+- 启动：`docker-compose -f ~/elasticsearch-6.7.2-docker.yml -p elasticsearch_6.7.2 up -d`
+- `mkdir -p /data/docker/elasticsearch-6.7.2/data`
+
+```
+version: '3'
+services:
+  elasticsearch1:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.7.2
+    container_name: elasticsearch-6.7.2
+    environment:
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "cluster.name=elasticsearch"
+      - "network.host=0.0.0.0"
+      - "http.host=0.0.0.0"
+      - "xpack.security.enabled=false"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    ports:
+      - 9200:9200
+      - 9300:9300
+    volumes:
+      - /data/docker/elasticsearch-6.7.2/data:/usr/share/elasticsearch/data
+
+```
+
 
 -------------------------------------------------------------------
 
 
-## Elasticsearch 6.5.x 安装（适配与 5.5.x）
+## Elasticsearch 6.5.x 安装（适配与 5.5.x，6.6.x）
 
 #### 环境
 
@@ -58,15 +113,30 @@ elasticsearch hard memlock unlimited
 
 #### 开始安装
 
+- 检查：`rpm -qa | grep elastic`
+- 卸载：`rpm -e --nodeps elasticsearch`
 - 官网 RPM 安装流程（重要，以下资料都是对官网的总结）：<https://www.elastic.co/guide/en/elasticsearch/reference/current/rpm.html>
 - 导入 KEY：`rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch`
 - 新建文件：`vim /etc/yum.repos.d/elasticsearch.repo`
-- 内容如下：
+- 内容如下（6.x）：
 
 ```
 [elasticsearch-6.x]
 name=Elasticsearch repository for 6.x packages
 baseurl=https://artifacts.elastic.co/packages/6.x/yum
+gpgcheck=1
+gpgkey=https://artifacts.elastic.co/GPG-KEY-elasticsearch
+enabled=1
+autorefresh=1
+type=rpm-md
+```
+
+- 内容如下（5.x）：
+
+```
+[elasticsearch-5.x]
+name=Elasticsearch repository for 5.x packages
+baseurl=https://artifacts.elastic.co/packages/5.x/yum
 gpgcheck=1
 gpgkey=https://artifacts.elastic.co/GPG-KEY-elasticsearch
 enabled=1
@@ -106,6 +176,9 @@ type=rpm-md
 - 默认只能 localhost 访问，修改成支持外网访问
 
 ```
+打开这个注释：#cluster.name: my-application
+集群名称最好是自己给定，不然有些 client 端会连不上，或者要求填写
+
 打开这个注释：#network.host: 192.168.0.1
 改为：network.host: 0.0.0.0
 ```
@@ -113,6 +186,12 @@ type=rpm-md
 #### 安装 X-Pack（6.5.x 默认带了 x-pack）
 
 - `cd /usr/share/elasticsearch && bin/elasticsearch-plugin install x-pack`
+
+#### GUI 客户端工具
+
+- 优先推荐：<https://www.elastic-kaizen.com/download.html>
+- <https://github.com/ElasticHQ/elasticsearch-HQ>
+
 
 #### 安装 Chrome 扩展的 Head
 

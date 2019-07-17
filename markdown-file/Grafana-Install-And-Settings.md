@@ -6,6 +6,30 @@
 - [支持的 Elasticsearch 版本](http://docs.grafana.org/features/datasources/elasticsearch/#elasticsearch-version)
 
 
+## Grafana Docker 安装
+
+- 官网：<https://hub.docker.com/r/grafana/grafana/>
+
+```
+mkdir -p /data/docker/grafana/data
+chmod 777 -R /data/docker/grafana/data
+
+docker run -d --name grafana -p 3000:3000 -v /data/docker/grafana/data:/var/lib/grafana grafana/grafana
+
+docker exec -it grafana /bin/bash
+
+容器中默认的配置文件位置：/etc/grafana/grafana.ini
+复制出配置文件到宿主机：docker cp grafana:/etc/grafana/grafana.ini /Users/gitnavi/
+```
+
+- <http://127.0.0.1:3000>
+- 默认管理账号；admin，密码：admin，第一次登录后需要修改密码，也可以通过配置文件修改
+
+```
+[security]
+admin_user = admin
+admin_password = admin
+```
 ----------------------------------------------------------------------------------------------
 
 ## Grafana 安装
@@ -62,6 +86,12 @@ sudo systemctl status grafana-server
 - 个性化设置：<http://192.168.0.105:3000/org>
 - 软件变量：<http://192.168.0.105:3000/admin/settings>
 
+## 官网 dashboard
+
+- dashboar仓库地址：<https://grafana.com/dashboards>
+- 本地可以通过输入 dashboard id 导入别人模板
+- 打开：<http://192.168.0.105:3000/dashboard/import>
+    - 输入对应的 id，点击 Load 即可
 
 ----------------------------------------------------------------------------------------------
 

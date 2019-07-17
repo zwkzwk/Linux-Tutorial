@@ -66,6 +66,8 @@ procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
 	- `bi` 表示从块设备读取数据的量（读磁盘）
 	- `bo` 表示从块设备写入数据的量（写磁盘）
 	- **如果bi和bo两个数字比较高，则说明，磁盘IO压力大。**
+	- `in` 每秒 CPU 的中断次数，包括时间中断
+	- `cs` 每秒上下文切换次数，例如我们调用系统函数，就要进行上下文切换，线程的切换，也要进程上下文切换，这个值要越小越好，太大了，要考虑调低线程或者进程的数目
 	- `wa` 表示I/O等待所占用CPU的时间比
 
 #### 命令：sar（综合）
@@ -266,6 +268,7 @@ atctive 和 passive 的数目通常可以用来衡量服务器的负载：接受
 - 在 `top` 命令状态下按 <kbd>shfit</kbd> + <kbd>m</kbd> 可以按照 **内存使用** 大小排序
 - 在 `top` 命令状态下按 <kbd>shfit</kbd> + <kbd>p</kbd> 可以按照 **CPU 使用** 大小排序
 - 展示数据上，%CPU 表示进程占用的 CPU 百分比，%MEM 表示进程占用的内存百分比
+- mac 下不一样：要先输入 o，然后输入 cpu 则按 cpu 使用量排序，输入 rsize 则按内存使用量排序。
 
 #### CPU 其他工具
 
@@ -573,7 +576,7 @@ TOTAL:（总的流量）       12.9GB          229Mb              190Mb   193Mb 
 #### lsof
 
 - 安装 lsof：`yum install -y lsof`
-- 查看 3316 端口是否有被使用：`lsof -i:3316`，**有被使用会输出类似如下信息，如果没被使用会没有任何信息返回**
+- 查看 3316 端口是否有被使用（macOS 也适用）：`lsof -i:3316`，**有被使用会输出类似如下信息，如果没被使用会没有任何信息返回**
 
 ```
 COMMAND     PID USER   FD   TYPE  DEVICE SIZE/OFF NODE NAME
@@ -593,7 +596,7 @@ docker-pr 13551 root    4u  IPv6 2116824      0t0  TCP *:aicc-cmi (LISTEN)
 #### netstat
 
 - 更多用法可以看：[netstat 的10个基本用法](https://linux.cn/article-2434-1.html)
-- 查看所有在用的端口：`netstat -ntlp`
+- 查看所有在用的端口（macOS 也适用）：`netstat -ntlp`
 
 ```
 Active Internet connections (only servers)

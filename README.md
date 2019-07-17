@@ -1,4 +1,10 @@
-# Java 程序员眼中的 Linux
+
+## 团队 DevOps 方案参考
+
+<a target="_blank" href="https://coding.net/?utm_source=judasn">
+<img id="judasn" src="https://upload-images.jianshu.io/upload_images/12159-e3279861ff8655c9.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+</a>
+
 
 ## 初衷(Original Intention)
 
@@ -57,6 +63,7 @@
 - [Jenkins 安装和配置](markdown-file/Jenkins-Install-And-Settings.md)
 - [Maven 安装和配置](markdown-file/Maven-Install-And-Settings.md)
 - [Nexus 安装和配置](markdown-file/Nexus-Install-And-Settings.md)
+- [PostgreSQL 安装和配置](markdown-file/PostgreSQL-Install-And-Settings.md)
 - [MySQL 安装和配置](markdown-file/Mysql-Install-And-Settings.md)
 - [MySQL 优化](markdown-file/Mysql-Optimize.md)
 - [MySQL 测试](markdown-file/Mysql-Test.md)
@@ -66,6 +73,7 @@
 - [MongoDB 安装和配置](markdown-file/MongoDB-Install-And-Settings.md)
 - [Solr 安装和配置](markdown-file/Solr-Install-And-Settings.md)
 - [Jira 安装和配置](markdown-file/Jira-Install-And-Settings.md)
+- [Confluence 安装和配置](markdown-file/Confluence-Install-And-Settings.md)
 - [TeamCity 安装和配置](markdown-file/TeamCity-Install-And-Settings.md)
 - [Nginx 安装和配置](markdown-file/Nginx-Install-And-Settings.md)
 - [wrk 安装和配置](markdown-file/wrk-Install-And-Settings.md)
@@ -99,9 +107,12 @@
 - [WordPress 安装和配置](markdown-file/WordPress-Install-And-Settings.md)
 - [GoAccess 安装和配置](markdown-file/GoAccess-Install-And-Settings.md)
 - [Portainer 安装和配置](markdown-file/Portainer-Install-And-Settings.md)
+- [Influxdb 安装和配置](markdown-file/Influxdb-Install-And-Settings.md)
+- [Prometheus 安装和配置](markdown-file/Prometheus-Install-And-Settings.md)
 - [Grafana 安装和配置](markdown-file/Grafana-Install-And-Settings.md)
 - [Ansible 安装和配置](markdown-file/Ansible-Install-And-Settings.md)
-- [Wormhole + Flink 最佳实践](markdown-file/Wormhole-Install-And-Settings.md)
+- [Wormhole + Flink 安装和配置](markdown-file/Wormhole-Install-And-Settings.md)
+- [SkyWalking 安装和配置](markdown-file/SkyWalking-Install-And-Settings.md)
 
 ## 联系(Contact)
 
