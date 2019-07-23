@@ -5,9 +5,7 @@
 - 官网：<https://hub.docker.com/_/elasticsearch>
 - 官网列表：<https://www.docker.elastic.co/>
 - 阿里云支持版本：<https://data.aliyun.com/product/elasticsearch>
-    - 7.x：7.1.0
-    - 6.x：6.8.0
-    - 5.x：5.6.8
+    - 阿里云有一个 `插件配置` 功能，常用的 Elasticsearch 插件都带了，勾选下即可安装。也支持上传安装。
 - 注意：docker 版本下 client.transport.sniff = true 是无效的。
 
 #### 5.6.x
@@ -43,11 +41,13 @@ services:
 ```
 
 
-#### 6.7.x
+#### 6.7.x（带 ik 分词）
 
 - `vim ~/elasticsearch-6.7.2-docker.yml`
 - 启动：`docker-compose -f ~/elasticsearch-6.7.2-docker.yml -p elasticsearch_6.7.2 up -d`
 - `mkdir -p /data/docker/elasticsearch-6.7.2/data`
+- 如果官网镜像比较慢可以换成阿里云：`registry.cn-hangzhou.aliyuncs.com/elasticsearch/elasticsearch:6.7.2`
+- 下载 ik 分词（版本必须和 Elasticsearch 版本对应，包括小版本号）：<https://github.com/medcl/elasticsearch-analysis-ik>
 
 ```
 version: '3'
@@ -73,7 +73,26 @@ services:
       - 9300:9300
     volumes:
       - /data/docker/elasticsearch-6.7.2/data:/usr/share/elasticsearch/data
+      - /data/docker/ik:/usr/share/elasticsearch/plugins/ik
+```
 
+- Elasticsearch Head 插件地址：<https://chrome.google.com/webstore/detail/ffmkiejjmecolpfloofpjologoblkegm>
+- 测试：
+
+
+```
+http://localhost:9200/
+_analyze?pretty   POST
+
+
+{"analyzer":"ik_smart","text":"安徽省长江流域"}
+```
+
+- ik_max_word 和 ik_smart 什么区别?
+
+```
+ik_max_word: 会将文本做最细粒度的拆分，比如会将“中华人民共和国国歌”拆分为“中华人民共和国,中华人民,中华,华人,人民共和国,人民,人,民,共和国,共和,和,国国,国歌”，会穷尽各种可能的组合，适合 Term Query；
+ik_smart: 会做最粗粒度的拆分，比如会将“中华人民共和国国歌”拆分为“中华人民共和国,国歌”，适合 Phrase 查询。
 ```
 
 
